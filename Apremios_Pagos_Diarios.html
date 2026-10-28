@@ -344,6 +344,7 @@ body:not(.is-admin) .soloadmin{display:none!important}
 .avisobar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:300;width:min(900px,94vw);display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;background:var(--panel);color:var(--ink);border:2px solid var(--pri);border-radius:14px;padding:12px 16px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .avisobar[hidden]{display:none!important}.avisobar .ab-t{flex:1 1 380px;line-height:1.4}.avisobar .ab-b{display:flex;gap:8px}.avisobar .ab-b .btn{min-width:150px}.avisobar.warn{border-color:#d97706}#carpBar{bottom:96px}#updBar:not([hidden])~#carpBar{bottom:110px}
 #login .avisobar{position:static;transform:none;width:min(460px,100%);box-shadow:0 8px 24px rgba(0,0,0,.35);padding:10px 12px}#login .avisobar .ab-b .btn{min-width:0;flex:1}#login .avisobar .ab-b{width:100%}
+.avisobar.mala{border-color:#dc2626;background:#fff1f2;color:#7f1d1d}[data-theme=dark] .avisobar.mala{background:#3b1212;color:#fecaca}
 #updBody ol{padding-left:20px;line-height:1.6}#updBody .mono{word-break:break-all}
 /* ================= TEMA (un solo lugar para los colores) =================
    Azul marino + celeste + grises azulados. Modo claro en :root, modo oscuro en [data-theme=dark].
@@ -4455,17 +4456,28 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.10.28.1';
+const APP_VERSION='2026.10.28.2';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
+/* Firma digital: sólo se instala una versión firmada con la clave privada del Director (queda en su computadora).
+   El programa lleva la clave pública; si una versión publicada no tiene esa firma, se avisa y no se instala. */
+const FIRMA_PUB='BHIKAIUqzoegks5s2zJUvv/XV1fOUwL8k+Uf8anyFOQrmyXCLRqwGxUQeKM7ok6k99wcc+FnF4bNhjH71xc2YZQ=';
+const b64bytes=t=>Uint8Array.from(atob(String(t||'')),c=>c.charCodeAt(0));
+const conFirma=()=>!FIRMA_PUB.startsWith('__');
+const textoFirmado=j=>['APREMIOS-FIRMA-1',j.version,j.fecha,j.archivo,j.sha256,j.novedades].join('\n');
+async function firmaOk(j){if(!conFirma())return true;if(!j||!j.firma||!j.sha256||!j.archivo)return false;
+  try{const k=await crypto.subtle.importKey('raw',b64bytes(FIRMA_PUB),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+    return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,b64bytes(j.firma),new TextEncoder().encode(textoFirmado(j)))}catch(e){return false}}
 let updInfo=null;
 function cmpVer(a,b){const x=String(a||'').split('.').map(n=>parseInt(n)||0),y=String(b||'').split('.').map(n=>parseInt(n)||0);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0?1:-1}return 0}
 async function fetchTO(url,ms,tipo){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{cache:'no-store',signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return tipo==='json'?await r.json():await r.arrayBuffer()}finally{clearTimeout(t)}}
 async function buscarActualizacion(){
   if(!navigator.onLine||APP_VERSION.startsWith('__'))return null;
   try{const j=await fetchTO(UPD_BASE+'version.json?t='+Date.now(),5000,'json');
-    if(j&&j.version&&cmpVer(j.version,APP_VERSION)>0){updInfo=j;
+    if(j&&j.version&&cmpVer(j.version,APP_VERSION)>0){
+      if(!await firmaOk(j)){updInfo=null;updUbicar();$('#updBar').classList.add('mala');$('#updBar').querySelector('.ab-t').innerHTML=`<b>Atención:</b> en el repositorio hay una versión (${esc(j.version)}) que <b>no tiene la firma digital del Director</b>. No se instala. Si no la publicaste vos, revisá tu cuenta de GitHub.`;$('#updOk').hidden=true;$('#updOk').style.display='none';$('#updLater').textContent='Entendido';$('#updBar').hidden=false;try{logA('Actualización rechazada','versión '+j.version+' sin firma digital válida')}catch(e){}return j}
+      updInfo=j;
       updUbicar();$('#updTxt').innerHTML=`(versión <b>${esc(j.version)}</b>${j.fecha?', '+esc(dmy(j.fecha)):''}): ${esc(j.novedades||'')}`;$('#updBar').hidden=false}
     return j}catch(e){return null}}
 /* en la pantalla de ingreso el aviso va dentro de la pantalla (no tapa los botones); adentro, abajo */
@@ -4480,7 +4492,9 @@ async function actualizarAhora(){
     // 1) respaldo completo antes que nada
     save();await flush();await snapshot('Antes de actualizar a la versión '+j.version,'manual');
     if(ST.dir!=='ok')backup();
-    // 2) descarga y control
+    // 2) firma, descarga y control
+    if(!await firmaOk(j))throw new Error('La versión publicada no tiene la firma digital del Director. No se cambió nada.');
+    if(conFirma()&&!j.sha256)throw new Error('La versión publicada no trae el control sha256. No se cambió nada.');
     const buf=await fetchTO(UPD_BASE+(j.archivo||APP_ARCHIVO)+'?t='+Date.now(),90000);
     const sha=hex(await crypto.subtle.digest('SHA-256',buf));
     if(j.sha256&&sha!==String(j.sha256).toLowerCase())throw new Error('El archivo descargado está incompleto o no coincide (control sha256). No se cambió nada.');
@@ -4502,7 +4516,7 @@ async function actualizarAhora(){
     updMsg('Programa actualizado','<p>Listo: se guardó la versión nueva en el mismo archivo. El programa se vuelve a abrir solo.</p>');
     setTimeout(()=>location.reload(),900);
   }catch(e){btn.disabled=false;btn.textContent='Actualizar ahora';
-    if(/cancelada|sha256|no es la versión/.test(e.message)){toast(e.message,true);return}
+    if(/cancelada|sha256|no es la versión|firma digital/.test(e.message)){toast(e.message,true);return}
     try{const buf=await fetchTO(UPD_BASE+(j.archivo||APP_ARCHIVO)+'?t='+Date.now(),90000);return updDescarga(new Blob([buf],{type:'text/html'}),j,e)}catch(e2){toast('No se pudo descargar la actualización ('+(e.message||e.name)+'). El programa sigue igual.',true)}}
 }
 function updDescarga(blob,j,err){const nom=nombreActual();download(blob,nom);$('#updBar').hidden=true;
