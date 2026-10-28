@@ -1,7 +1,8 @@
 {
-  "version": "2026.10.28.1",
-  "fecha": "2026-10-28",
-  "novedades": "Primera versión publicada: planes con fecha y monto de cada cuota, sobretasa más visible, informe del cambio de JUS, permisos de Luisa, actualización en línea y respaldos automáticos.",
-  "archivo": "Apremios_Pagos_Diarios.html",
-  "sha256": "ec516e05363fa46b44de2406e72fa5a45ac3f28de0570bf9a133c35d89e398d8"
+    "version":  "2026.10.28.2",
+    "fecha":  "2026-10-28",
+    "novedades":  "Versión con firma digital: el programa sólo instala actualizaciones firmadas por el Director.",
+    "archivo":  "Apremios_Pagos_Diarios.html",
+    "sha256":  "510dc03bb23123e2567947baeb14d82e11918d4a1be39845be446f7a2d49ccb1",
+    "firma":  "AV7B61IrXqPf3s2BDbBO1ptCoWq8EdVtRnS2AUzn6KYiLyY8jlo3RzIZVA/94HW5HDH2GDqBKBmabJZrv8Exlw=="
 }
