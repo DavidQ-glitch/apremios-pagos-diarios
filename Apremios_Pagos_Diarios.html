@@ -346,6 +346,8 @@ body:not(.is-admin) .soloadmin{display:none!important}
 #login .avisobar{position:static;transform:none;width:min(460px,100%);box-shadow:0 8px 24px rgba(0,0,0,.35);padding:10px 12px}#login .avisobar .ab-b .btn{min-width:0;flex:1}#login .avisobar .ab-b{width:100%}
 .avisobar.mala{border-color:#dc2626;background:#fff1f2;color:#7f1d1d}[data-theme=dark] .avisobar.mala{background:#3b1212;color:#fecaca}
 #updBody ol{padding-left:20px;line-height:1.6}#updBody .mono{word-break:break-all}
+#imTabla{font-size:12px}#imTabla td.clip{max-width:140px}#imTabla td,#imTabla th{padding-left:6px;padding-right:6px}
+.imvarios{margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}.imv-sw{display:flex;gap:8px;align-items:center;cursor:pointer;flex-wrap:wrap}.imv-l{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px}.imv-l[hidden]{display:none!important}.imv-l label{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:4px 10px;font-size:12.5px;cursor:pointer}.imv-l label:has(input:checked){border-color:var(--pri);background:var(--pri-soft)}.imv-l .imv-acc{border:0;background:transparent;color:var(--pri);font-weight:700;padding:4px 6px}.imv-l label.sinmes{opacity:.6}
 /* ================= TEMA (un solo lugar para los colores) =================
    Azul marino + celeste + grises azulados. Modo claro en :root, modo oscuro en [data-theme=dark].
    Para cambiar de tema alcanza con cambiar estas variables. */
@@ -1022,6 +1024,8 @@ table.grid tfoot td{background:var(--th-bg)}
       <div class="f"><label>Hoja del Excel</label><select id="imHoja"></select></div>
       <div class="f"><label>Importar en la planilla de</label><select id="imMes"></select></div>
     </div>
+    <div class="imvarios"><label class="imv-sw"><input type="checkbox" id="imMulti"> <b>Importar varios meses a la vez</b> <span class="hint">cada hoja va a la planilla de su mes</span></label>
+      <div id="imHojas" class="imv-l" hidden></div></div>
     <div id="imResumen"></div>
     <div class="tablewrap" style="max-height:46vh"><table class="grid" id="imTabla"></table></div>
     <div class="hint" id="imSolo" style="margin-top:10px"></div>
@@ -3008,7 +3012,10 @@ function depCapSel(){return {base:parseNum($('#dc_base').value)||0,sobre:$('#dc_
 /* ================== IMPORTAR PLANILLA MENSUAL DESDE EXCEL ================== */
 let IMP=null; // {hojas:[{nombre,mes,list,meta}], plan}
 const IMP_CAMPOS=[['orden','N° orden'],['partida','Partida'],['cert','Certificado'],['periodos','Períodos'],['fPago','Fecha de pago'],['causCont','Causídico contado'],['causCuotas','Causídico cuotas'],['tasa','Tasa'],['sobretasa','Sobretasa'],['bono','Bono'],['honConv','Honorario'],['contrad','10%'],['jus','Ius'],['aranceles','Aranceles'],['aportesImp','Aportes'],['boletas','Boletas'],['fDep','Fecha depósito'],['demandado','Demandado'],['apoderado','Apoderado'],['expte','Expte'],['juzg','Juzgado'],['capital','Capital'],['cuotas','Cuotas'],['cantCuotas','Cant. cuotas'],['cantCuotas','Cant. cuotas'],['plan','Plan'],['cuotas2','Cuotas 2º'],['mitad','50% Municipio'],['medida','Medida']];
-function mesDeHoja(nombre){const nm=normTxt(nombre);const mi=MESES.findIndex(m=>nm.includes(m));if(mi<0)return '';const y=(nm.match(/20\d\d/)||[String(new Date().getFullYear())])[0];return y+'-'+String(mi+1).padStart(2,'0')}
+function mesDeHoja(nombre,list){const nm=normTxt(nombre);const mi=MESES.findIndex(m=>nm.includes(m));if(mi<0)return '';
+  let y=(String(nombre).match(/(?<![\d.,$])20[2-3]\d(?![\d.,])/)||[])[0];
+  if(!y&&list){const c={};list.forEach(o=>{if(o.fPago&&+o.fPago.slice(5,7)===mi+1){const a=o.fPago.slice(0,4);c[a]=(c[a]||0)+1}});y=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]}
+  return (y||String(new Date().getFullYear()))+'-'+String(mi+1).padStart(2,'0')}
 /* lee una hoja: busca la fila de títulos en las primeras 15 filas */
 function leerHoja(ws){
   let hr=0,hdr=[];
@@ -3033,20 +3040,23 @@ function leerHoja(ws){
 function isoTexto(v){if(v==null||v==='')return'';if(v instanceof Date)return v.getUTCFullYear()<1990?'':isoDate(v);if(typeof v==='number'){if(v<30000||v>80000)return'';const d=new Date(Math.round((v-25569)*864e5));return isoDate(d)}const m=String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/);if(!m)return'';const y=m[3].length===2?'20'+m[3]:m[3];return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}
 async function abrirImportMes(file){
   const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());
-  const hojas=[];wb.eachSheet(ws=>{const h=leerHoja(ws);if(h&&h.list.length){let mes=mesDeHoja(ws.name);if(!mes){const c={};h.list.forEach(o=>{if(o.fPago)c[o.fPago.slice(0,7)]=(c[o.fPago.slice(0,7)]||0)+1});mes=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||''}hojas.push({nombre:ws.name,mes,...h})}});
+  const hojas=[];wb.eachSheet(ws=>{const h=leerHoja(ws);if(h&&h.list.length){let mes=mesDeHoja(ws.name,h.list);if(!mes){const c={};h.list.forEach(o=>{if(o.fPago)c[o.fPago.slice(0,7)]=(c[o.fPago.slice(0,7)]||0)+1});mes=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||''}hojas.push({nombre:ws.name,mes,...h})}});
   if(!hojas.length){toast('No encontré en ese Excel una planilla con los títulos de columna (N° de orden, partida, demandado…)',true);return}
   IMP={archivo:file.name,hojas};
   const mSel=$('#cMes').value;const pref=hojas.findIndex(h=>h.mes===mSel);
   $('#imHoja').innerHTML=hojas.map((h,i)=>`<option value="${i}">${esc(h.nombre)} — ${h.list.length} pagos</option>`).join('');
   $('#imHoja').value=String(pref>=0?pref:hojas.length-1);
   $('#imArchivo').textContent=file.name;
+  $('#imMulti').checked=false;$('#imHojas').hidden=true;$('#imMulti').closest('.imvarios').hidden=hojas.length<2;
+  $('#imHojas').innerHTML=hojas.map((h,i)=>`<label class="${h.mes?'':'sinmes'}" title="${h.mes?'Va a la planilla de '+esc(mesLabel(h.mes)):'No se reconoce el mes de esta hoja: importala sola'}"><input type="checkbox" class="imH" value="${i}" ${h.mes?'':'disabled'}> ${esc(h.nombre)} <span class="muted small">${h.mes?'→ '+esc(mesLabel(h.mes)):'(sin mes)'} · ${h.list.length}</span></label>`).join('')+'<button type="button" class="imv-acc" id="imHTodas">Todas</button><button type="button" class="imv-acc" id="imHNinguna">Ninguna</button>';
+  $$('#imHojas .imH').forEach(c=>c.onchange=imComparar);$('#imHTodas').onclick=()=>{$$('#imHojas .imH:not(:disabled)').forEach(c=>c.checked=true);imComparar()};$('#imHNinguna').onclick=()=>{$$('#imHojas .imH').forEach(c=>c.checked=false);imComparar()};
   imElegirHoja();$('#dlgImpMes').showModal();
 }
 function imElegirHoja(){const h=IMP.hojas[+$('#imHoja').value];const meses=[...new Set([...S.rows.map(r=>r.mes),h.mes,mesDe(hoyISO())].filter(Boolean))].sort().reverse();$('#imMes').innerHTML=meses.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');$('#imMes').value=h.mes||meses[0];imComparar()}
 const imNorm=(k,v)=>NUMF.includes(k)?r2(+v||0):String(v??'').trim().toUpperCase().replace(/\s+/g,' ');
 const imKey=r=>normTxt(r.orden)+'|'+normTxt(r.demandado).replace(/ /g,'').slice(0,10);
-function imComparar(){
-  const h=IMP.hojas[+$('#imHoja').value];const m=$('#imMes').value;
+/* compara una hoja con la planilla del mes m (no toca la pantalla) */
+function imPlanHoja(h,m,hi){
   const act=S.rows.filter(r=>r.mes===m);const libres=new Set(act);
   const porKey=new Map();act.forEach(r=>{const k=imKey(r);if(!porKey.has(k))porKey.set(k,[]);porKey.get(k).push(r)});
   const nuevos=[],cambios=[],iguales=[];
@@ -3055,48 +3065,65 @@ function imComparar(){
     if(!p){nuevos.push({o,i});return}libres.delete(p);
     const dif=IMP_CAMPOS.filter(([k])=>!(k==='honConv'&&h.sinHon&&!(+p.honConv>0))&&(NUMF.includes(k)?Math.abs(imNorm(k,p[k])-imNorm(k,o[k]))>0.011:imNorm(k,p[k])!==imNorm(k,o[k]))).map(([k,l])=>({k,l,antes:p[k],despues:o[k]}));
     if(dif.length)cambios.push({o,p,dif,i});else iguales.push({o,p})});
-  const solo=[...libres];
-  IMP.plan={h,m,nuevos,cambios,iguales,solo};
+  return {h,hi,m,nuevos,cambios,iguales,solo:[...libres]}}
+const imMultiOn=()=>$('#imMulti').checked;
+const imHojasSel=()=>imMultiOn()?$$('#imHojas .imH').filter(c=>c.checked).map(c=>+c.value):[+$('#imHoja').value];
+function imComparar(){
+  const multi=imMultiOn();$('#imHoja').disabled=multi;$('#imMes').disabled=multi;$('#imHojas').hidden=!multi;
+  const sel=imHojasSel();
+  const P=sel.map(hi=>{const h=IMP.hojas[hi];return imPlanHoja(h,multi?h.mes:$('#imMes').value,hi)});
+  IMP.planes=P;IMP.plan=P.length===1?P[0]:null;
+  const mesesRep=P.map(x=>x.m).filter((m,k,a)=>a.indexOf(m)!==k);
+  const T=k=>P.reduce((s,x)=>s+(k==='excel'?x.h.list.length:x[k].length),0);
   const v=(k,x)=>NUMF.includes(k)?money(x):(k==='fPago'||k==='fDep')?dmy(x):esc(x||'—');
-  const cerr=S.cierres[m];
-  $('#imResumen').innerHTML=`<div class="kpis" style="margin:0 0 10px;grid-template-columns:repeat(5,1fr)"><div class="kpi"><div class="l">En el Excel</div><div class="v">${h.list.length}</div></div><div class="kpi"><div class="l">Nuevos</div><div class="v">${nuevos.length}</div></div><div class="kpi"><div class="l">Con diferencias</div><div class="v">${cambios.length}</div></div><div class="kpi"><div class="l">Iguales</div><div class="v">${iguales.length}</div></div><div class="kpi"><div class="l">Sólo en el programa</div><div class="v">${solo.length}</div></div></div>`+
-    (cerr?`<p class="tag emb" style="display:inline-block">La planilla de ${mesLabel(m)} está cerrada: si importás, el cierre queda marcado para actualizar.</p>`:'')+
-    (h.mes&&h.mes!==m?`<p class="hint">La hoja parece ser de ${mesLabel(h.mes)}, pero se va a importar en ${mesLabel(m)}.</p>`:'');
-  const fila=(x,tipo)=>{const o=x.o;return `<tr data-t="${tipo}" data-i="${x.i}"><td><input type="checkbox" class="imSel" checked></td><td class="nw">${esc(o.orden)}</td><td>${dmy(o.fPago)}</td><td>${esc(o.partida)}</td><td class="clip" title="${esc(o.demandado)}">${esc(o.demandado)}</td><td>${esc(o.apoderado)}</td><td class="n">${o.causContTxt?'<span class="muted small">'+esc(o.causContTxt)+'</span>':money(o.causCont)}</td><td class="n">${money(o.mitad)}</td><td class="small">${tipo==='c'?x.dif.map(d=>`<b>${esc(d.l)}</b>: ${v(d.k,d.antes)} → ${v(d.k,d.despues)}`).join('<br>'):'<span class="tag ok">nuevo</span>'}</td></tr>`};
-  $('#imTabla').innerHTML=`<thead><tr><th style="width:1%"><input type="checkbox" id="imTodos" checked></th><th>N°</th><th>Fecha</th><th>Partida</th><th>Demandado</th><th>Apoderado</th><th class="n">Causídico</th><th class="n">50%</th><th>Qué cambia</th></tr></thead><tbody>`+
-    (nuevos.length||cambios.length?nuevos.map(x=>fila(x,'n')).join('')+cambios.map(x=>fila(x,'c')).join(''):'<tr><td colspan="9" class="muted">No hay pagos nuevos ni diferencias: la planilla del programa ya coincide con el Excel.</td></tr>')+'</tbody>';
-  $('#imSolo').innerHTML=solo.length?`<b>${solo.length} pago(s) están en el programa y no en el Excel</b> (por ejemplo, cargados después de armar el Excel): ${solo.slice(0,8).map(r=>esc((r.orden||'')+' '+(r.demandado||''))).join(' · ')}${solo.length>8?' …':''}<div class="checks" style="margin:6px 0 0"><label><input type="checkbox" id="imBorrarSolo"> Enviarlos a la papelera (si no, se conservan)</label></div>`:'';
+  const cerr=[...new Set(P.map(x=>x.m))].filter(m=>S.cierres[m]);
+  $('#imResumen').innerHTML=(multi?`<p style="margin:0 0 8px"><b>${P.length}</b> hoja(s) seleccionada(s)${P.length?': '+P.map(x=>esc(mesLabel(x.m))).join(', '):''}.</p>`:'')+
+    `<div class="kpis" style="margin:0 0 10px;grid-template-columns:repeat(5,1fr)"><div class="kpi"><div class="l">En el Excel</div><div class="v">${T('excel')}</div></div><div class="kpi"><div class="l">Nuevos</div><div class="v">${T('nuevos')}</div></div><div class="kpi"><div class="l">Con diferencias</div><div class="v">${T('cambios')}</div></div><div class="kpi"><div class="l">Iguales</div><div class="v">${T('iguales')}</div></div><div class="kpi"><div class="l">Sólo en el programa</div><div class="v">${T('solo')}</div></div></div>`+
+    (cerr.length?`<p class="tag emb" style="display:inline-block">${cerr.length>1?'Las planillas de ':'La planilla de '}${cerr.map(mesLabel).join(', ')} ${cerr.length>1?'están cerradas':'está cerrada'}: si importás, el cierre queda marcado para actualizar.</p>`:'')+
+    (mesesRep.length?`<p class="tag emb" style="display:inline-block">Hay dos hojas para ${[...new Set(mesesRep)].map(mesLabel).join(', ')}: dejá tildada una sola por mes.</p>`:'')+
+    (!multi&&P[0]&&P[0].h.mes&&P[0].h.mes!==P[0].m?`<p class="hint">La hoja parece ser de ${mesLabel(P[0].h.mes)}, pero se va a importar en ${mesLabel(P[0].m)}.</p>`:'');
+  const fila=(x,tipo,pl)=>{const o=x.o;return `<tr data-t="${tipo}" data-i="${x.i}" data-h="${pl.hi}"><td><input type="checkbox" class="imSel" checked></td>${multi?`<td class="nw small">${esc(mesLabel(pl.m))}</td>`:''}<td class="nw">${esc(o.orden)}</td><td>${dmy(o.fPago)}</td><td>${esc(o.partida)}</td><td class="clip" title="${esc(o.demandado)}">${esc(o.demandado)}</td><td>${esc(o.apoderado)}</td><td class="n">${o.causContTxt?'<span class="muted small">'+esc(o.causContTxt)+'</span>':money(o.causCont)}</td><td class="n">${money(o.mitad)}</td><td class="small">${tipo==='c'?x.dif.map(d=>`<b>${esc(d.l)}</b>: ${v(d.k,d.antes)} → ${v(d.k,d.despues)}`).join('<br>'):'<span class="tag ok">nuevo</span>'}</td></tr>`};
+  const nc=multi?10:9;const hay=T('nuevos')+T('cambios');
+  $('#imTabla').innerHTML=`<thead><tr><th style="width:1%"><input type="checkbox" id="imTodos" checked></th>${multi?'<th>Planilla</th>':''}<th>N°</th><th>Fecha</th><th>Partida</th><th>Demandado</th><th>Apoderado</th><th class="n">Causídico</th><th class="n">50%</th><th>Qué cambia</th></tr></thead><tbody>`+
+    (!P.length?`<tr><td colspan="${nc}" class="muted">Tildá arriba las hojas (meses) que querés importar.</td></tr>`:hay?P.map(pl=>pl.nuevos.map(x=>fila(x,'n',pl)).join('')+pl.cambios.map(x=>fila(x,'c',pl)).join('')).join(''):`<tr><td colspan="${nc}" class="muted">No hay pagos nuevos ni diferencias: ${multi?'esas planillas ya coinciden':'la planilla del programa ya coincide'} con el Excel.</td></tr>`)+'</tbody>';
+  const solo=P.flatMap(pl=>pl.solo.map(r=>({r,m:pl.m})));
+  $('#imSolo').innerHTML=solo.length?`<b>${solo.length} pago(s) están en el programa y no en el Excel</b> (por ejemplo, cargados después de armar el Excel): ${solo.slice(0,8).map(x=>esc((multi?mesLabel(x.m)+': ':'')+(x.r.orden||'')+' '+(x.r.demandado||''))).join(' · ')}${solo.length>8?' …':''}<div class="checks" style="margin:6px 0 0"><label><input type="checkbox" id="imBorrarSolo"> Enviarlos a la papelera (si no, se conservan)</label></div>`:'';
   $('#imTodos').onchange=e=>$$('#imTabla .imSel').forEach(c=>c.checked=e.target.checked);
-  $('#imOk').textContent=nuevos.length||cambios.length?'Importar los seleccionados':'Importar sólo los totales del pie';
+  $('#imOk').disabled=!P.length||mesesRep.length>0;
+  $('#imOk').textContent=!P.length?'Elegí al menos una hoja':hay?(P.length>1?`Importar los seleccionados (${P.length} meses)`:'Importar los seleccionados'):(P.length>1?'Importar sólo los totales del pie':'Importar sólo los totales del pie');
 }
 async function aplicarImportMes(){
-  const P=IMP.plan;const m=P.m;
-  if(!await permitirMes(m,'Importar la planilla desde Excel'))return;
-  const sel=new Set($$('#imTabla tr[data-t]').filter(tr=>tr.querySelector('.imSel').checked).map(tr=>tr.dataset.t+tr.dataset.i));
+  const PL=IMP.planes||[];if(!PL.length)return;
+  for(const pl of PL){if(!await permitirMes(pl.m,'Importar la planilla desde Excel'))return}
+  const sel=new Set($$('#imTabla tr[data-t]').filter(tr=>tr.querySelector('.imSel').checked).map(tr=>tr.dataset.h+':'+tr.dataset.t+tr.dataset.i));
   const borrar=$('#imBorrarSolo')?.checked;
   if(borrar&&!puedeEditarPagos()){toast('Sólo el Administrador o un usuario con permiso para editar y eliminar pagos puede enviar pagos a la papelera desde una importación',true);return}
-  await snapshot('Antes de importar '+mesLabel(m)+' desde Excel','manual');
-  let nN=0,nC=0,nB=0;const afect=[];const t0=new Date().toISOString();const mitAntes=totalesMes(m).mitad;
-  let ultPrin=null;
-  P.nuevos.forEach(({o,i})=>{if(!sel.has('n'+i))return;const med=(o.medida||'').toUpperCase();const sinc=/SIN/.test((o.causContTxt||'').toUpperCase())||!o.mitad;
-    const r=Object.assign({id:uid(),mes:m,emb:/\bEMB/.test(med)&&!/LEVANT/.test(med),embLote:'',hon:null,honEstado:sinc?'nc':'pend',creado:new Date().toISOString(),creadoPor:SES.u,importado:IMP.archivo},o);if(!String(o.orden||'').trim()&&ultPrin){r.partidaDe=ultPrin.id;r.emb=false}else ultPrin=r;S.rows.push(r);nN++});
-  P.cambios.forEach(({o,p,dif,i})=>{if(!sel.has('c'+i))return;const antes={...p};dif.forEach(d=>p[d.k]=o[d.k]);p.causContTxt=o.causContTxt;
-    if(dif.some(d=>d.k==='medida')){const med=(p.medida||'').toUpperCase();if(/\bEMB/.test(med)&&!/LEVANT/.test(med)&&!p.emb){p.emb=true;p.embLote=''}}
-    if(dif.some(d=>['mitad','contrad','honConv','jus','apoderado'].includes(d.k))){if(p.honEstado==='liq'&&imNorm('mitad',antes.mitad)!==imNorm('mitad',p.mitad))p.honAlerta={t:t0,motivo:'Modificado al importar el Excel de '+mesLabel(m),mitadAntes:antes.mitad,mitadAhora:p.mitad,liqMes:p.honMes};afect.push(p)}
-    if(p.emb&&p.embLote&&dif.some(d=>['demandado','expte','juzg','partida','apoderado','tasa','boletas','aportesImp'].includes(d.k))){p.reimp={t:t0,motivo:'Modificado al importar el Excel de '+mesLabel(m),loteAnterior:p.embLote};p.embLote=''}
-    logA('Importación: pago modificado',rowTxt(p)+' · '+dif.map(d=>`${d.l}: ${antes[d.k]??''} → ${o[d.k]??''}`).join(' · '));nC++});
-  if(borrar)P.solo.forEach(r=>{aPapelera(r,'Quitado al importar el Excel de '+mesLabel(m));S.rows=S.rows.filter(x=>x!==r);nB++});
-  const mt=P.h.meta;if(mt&&(mt.planesAnteriores!=null||Object.keys(mt.excel||{}).length)){S.meta[m]=S.meta[m]||{};if(mt.planesAnteriores!=null)S.meta[m].planesAnteriores=mt.planesAnteriores;S.meta[m].excel=Object.assign(S.meta[m].excel||{},mt.excel)}
-  if((nN||nC||nB)&&S.cierres[m])S.cierres[m].desact=new Date().toISOString();
-  if(r2(totalesMes(m).mitad)!==r2(mitAntes)){S.meta[m]=S.meta[m]||{};S.meta[m].recAlerta={t:t0,antes:mitAntes}}
-  logA('Importación de planilla mensual',`${mesLabel(m)} desde “${IMP.archivo}” (hoja ${P.h.nombre}) · ${nN} nuevos · ${nC} modificados · ${nB} a la papelera · ${P.iguales.length} sin cambios`);
+  await snapshot('Antes de importar '+PL.map(pl=>mesLabel(pl.m)).join(', ')+' desde Excel','manual');
+  const res=[];
+  for(const P of PL){const m=P.m;
+    let nN=0,nC=0,nB=0;const afect=[];const t0=new Date().toISOString();const mitAntes=totalesMes(m).mitad;
+    let ultPrin=null;const k=t=>P.hi+':'+t;
+    P.nuevos.forEach(({o,i})=>{if(!sel.has(k('n'+i)))return;const med=(o.medida||'').toUpperCase();const sinc=/SIN/.test((o.causContTxt||'').toUpperCase())||!o.mitad;
+      const r=Object.assign({id:uid(),mes:m,emb:/\bEMB/.test(med)&&!/LEVANT/.test(med),embLote:'',hon:null,honEstado:sinc?'nc':'pend',creado:new Date().toISOString(),creadoPor:SES.u,importado:IMP.archivo},o);if(!String(o.orden||'').trim()&&ultPrin){r.partidaDe=ultPrin.id;r.emb=false}else ultPrin=r;S.rows.push(r);nN++});
+    P.cambios.forEach(({o,p,dif,i})=>{if(!sel.has(k('c'+i)))return;const antes={...p};dif.forEach(d=>p[d.k]=o[d.k]);p.causContTxt=o.causContTxt;
+      if(dif.some(d=>d.k==='medida')){const med=(p.medida||'').toUpperCase();if(/\bEMB/.test(med)&&!/LEVANT/.test(med)&&!p.emb){p.emb=true;p.embLote=''}}
+      if(dif.some(d=>['mitad','contrad','honConv','jus','apoderado'].includes(d.k))){if(p.honEstado==='liq'&&imNorm('mitad',antes.mitad)!==imNorm('mitad',p.mitad))p.honAlerta={t:t0,motivo:'Modificado al importar el Excel de '+mesLabel(m),mitadAntes:antes.mitad,mitadAhora:p.mitad,liqMes:p.honMes};afect.push(p)}
+      if(p.emb&&p.embLote&&dif.some(d=>['demandado','expte','juzg','partida','apoderado','tasa','boletas','aportesImp'].includes(d.k))){p.reimp={t:t0,motivo:'Modificado al importar el Excel de '+mesLabel(m),loteAnterior:p.embLote};p.embLote=''}
+      logA('Importación: pago modificado',rowTxt(p)+' · '+dif.map(d=>`${d.l}: ${antes[d.k]??''} → ${o[d.k]??''}`).join(' · '));nC++});
+    if(borrar)P.solo.forEach(r=>{aPapelera(r,'Quitado al importar el Excel de '+mesLabel(m));S.rows=S.rows.filter(x=>x!==r);nB++});
+    const mt=P.h.meta;if(mt&&(mt.planesAnteriores!=null||Object.keys(mt.excel||{}).length)){S.meta[m]=S.meta[m]||{};if(mt.planesAnteriores!=null)S.meta[m].planesAnteriores=mt.planesAnteriores;S.meta[m].excel=Object.assign(S.meta[m].excel||{},mt.excel)}
+    if((nN||nC||nB)&&S.cierres[m])S.cierres[m].desact=new Date().toISOString();
+    if(r2(totalesMes(m).mitad)!==r2(mitAntes)){S.meta[m]=S.meta[m]||{};S.meta[m].recAlerta={t:t0,antes:mitAntes}}
+    logA('Importación de planilla mensual',`${mesLabel(m)} desde “${IMP.archivo}” (hoja ${P.h.nombre}) · ${nN} nuevos · ${nC} modificados · ${nB} a la papelera · ${P.iguales.length} sin cambios`);
+    res.push({m,nN,nC,nB})}
   save();await flush();$('#dlgImpMes').close();
-  $('#cMes').value=m;refresh();if(typeof actualizarTitileo==='function')actualizarTitileo();
-  toast(`Planilla de ${mesLabel(m)} importada: ${nN} nuevos, ${nC} modificados${nB?', '+nB+' a la papelera':''}.`);
+  const ult=res.map(x=>x.m).sort().pop();refresh();if(![...$('#cMes').options].some(o=>o.value===ult))$('#cMes').add(new Option(mesLabel(ult),ult));$('#cMes').value=ult;$('#cMes').dispatchEvent(new Event('change'));refresh();if(typeof actualizarTitileo==='function')actualizarTitileo();
+  if(res.length===1){const x=res[0];toast(`Planilla de ${mesLabel(x.m)} importada: ${x.nN} nuevos, ${x.nC} modificados${x.nB?', '+x.nB+' a la papelera':''}.`)}
+  else toast(`${res.length} planillas importadas: `+res.map(x=>`${mesLabel(x.m)} (${x.nN} nuevos, ${x.nC} modificados${x.nB?', '+x.nB+' a la papelera':''})`).join(' · '));
 }
 function instalarImportMes(){
   $('#cImport').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)abrirImportMes(f).catch(err=>toast('No se pudo leer el Excel: '+err.message,true))};
-  $('#imHoja').onchange=imElegirHoja;$('#imMes').onchange=imComparar;
+  $('#imHoja').onchange=imElegirHoja;$('#imMes').onchange=imComparar;$('#imMulti').onchange=()=>{if($('#imMulti').checked&&!$$('#imHojas .imH').some(c=>c.checked)){const c=$(`#imHojas .imH[value="${$('#imHoja').value}"]`);if(c&&!c.disabled)c.checked=true}imComparar()};
   $('#imOk').onclick=()=>aplicarImportMes().catch(err=>toast('Error al importar: '+err.message,true));$('#imCancel').onclick=()=>$('#dlgImpMes').close();
 }
 
@@ -4456,7 +4483,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.10.28.2';
+const APP_VERSION='2026.10.29.1';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
