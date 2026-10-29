@@ -1,8 +1,8 @@
 {
-    "version":  "2026.10.28.2",
-    "fecha":  "2026-10-28",
-    "novedades":  "Versión con firma digital: el programa sólo instala actualizaciones firmadas por el Director.",
+    "version":  "2026.10.29.1",
+    "fecha":  "2026-10-29",
+    "novedades":  "Importar varios meses a la vez desde un Excel con varias hojas: cada hoja va a la planilla de su mes.",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "510dc03bb23123e2567947baeb14d82e11918d4a1be39845be446f7a2d49ccb1",
-    "firma":  "AV7B61IrXqPf3s2BDbBO1ptCoWq8EdVtRnS2AUzn6KYiLyY8jlo3RzIZVA/94HW5HDH2GDqBKBmabJZrv8Exlw=="
+    "sha256":  "e929d87e1c51cba9f11f666eabdc09ada10a4bd5a810285d59476d348c29d61c",
+    "firma":  "uKhxC8AycN7XpYIYoxj0+cj8OMiq/jompnc1X5s6Ah+avilthpQ5aHsHE/QkNsOyQiQRa9Bp2WBmxTKlrYnoFA=="
 }
