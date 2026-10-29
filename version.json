@@ -1,8 +1,8 @@
 {
-    "version":  "2026.10.29.1",
+    "version":  "2026.10.29.3",
     "fecha":  "2026-10-29",
-    "novedades":  "Importar varios meses a la vez desde un Excel con varias hojas: cada hoja va a la planilla de su mes.",
+    "novedades":  "Comparativo con el Excel madre: muestra renglón por renglón dónde está cada diferencia y qué corregir; los meses conciliados se pueden revisar de nuevo. Aviso de actualización centrado.",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "e929d87e1c51cba9f11f666eabdc09ada10a4bd5a810285d59476d348c29d61c",
-    "firma":  "uKhxC8AycN7XpYIYoxj0+cj8OMiq/jompnc1X5s6Ah+avilthpQ5aHsHE/QkNsOyQiQRa9Bp2WBmxTKlrYnoFA=="
+    "sha256":  "4ba726f8ceaa6b1b0e92793d837724a06cfba57a92ab0cca959c98771ff096f9",
+    "firma":  "xnqry9H5HetHdkDDJB3nwf9Yrwr9KtWeH+5gQL/QUuegHwYnUhLmHjW6sP7tILi84h66Jy24uPKjb3sw1BDrzg=="
 }
