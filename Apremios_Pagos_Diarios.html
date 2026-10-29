@@ -349,6 +349,11 @@ body:not(.is-admin) .soloadmin{display:none!important}
 #updBody ol{padding-left:20px;line-height:1.6}#updBody .mono{word-break:break-all}
 #imTabla{font-size:12px}#imTabla td.clip{max-width:140px}#imTabla td,#imTabla th{padding-left:6px;padding-right:6px}
 .imvarios{margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}.imv-sw{display:flex;gap:8px;align-items:center;cursor:pointer;flex-wrap:wrap}.imv-l{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px}.imv-l[hidden]{display:none!important}.imv-l label{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:4px 10px;font-size:12.5px;cursor:pointer}.imv-l label:has(input:checked){border-color:var(--pri);background:var(--pri-soft)}.imv-l .imv-acc{border:0;background:transparent;color:var(--pri);font-weight:700;padding:4px 6px}.imv-l label.sinmes{opacity:.6}
+.compdlg{width:min(1320px,97vw)}.compdlg.full{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0;margin:0}.compdlg.full .dlg-body{max-height:calc(100vh - 120px)}.compdlg .dlg-head .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+.cpexp{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;background:var(--panel)}.cpexp h4{margin:0 0 8px;font-size:14px}.cpexp table{width:100%;border-collapse:collapse;font-size:13px}.cpexp td{padding:5px 8px;border-bottom:1px solid var(--line)}.cpexp td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.cpexp tr.tot td{font-weight:800;border-top:2px solid var(--ink)}.cpexp tr.cero td{color:var(--muted)}.cpexp .sug{font-size:12px;color:var(--muted)}
+.cpsec{margin:0 0 14px}.cpsec>h4{display:flex;gap:10px;align-items:center;margin:0 0 6px;font-size:14px}.cpsec>h4 .tag{font-size:11.5px}.cpsec .tablewrap{max-height:none}.compdlg.full .cpsec .tablewrap{max-height:none}
+.cpdif{display:grid;grid-template-columns:auto auto auto auto;gap:2px 12px;font-size:12px;align-items:baseline}.cpdif b{font-weight:700}.cpdif .ex{color:#b45309}.cpdif .pr{color:var(--pri)}[data-theme=dark] .cpdif .ex{color:#fbbf24}
+.cpque{font-size:12px;line-height:1.4}.cpque b{color:var(--ink)}#cpDetalle td{vertical-align:top}#cpDetalle .acts{flex-direction:column;align-items:stretch;gap:6px;width:200px}#cpDetalle .acts .btn.sm{width:100%;margin:0!important}#cpDetalle .acts .btn.sm+.btn.sm{margin-left:0!important}
 /* ================= TEMA (un solo lugar para los colores) =================
    Azul marino + celeste + grises azulados. Modo claro en :root, modo oscuro en [data-theme=dark].
    Para cambiar de tema alcanza con cambiar estas variables. */
@@ -1093,6 +1098,18 @@ table.grid tfoot td{background:var(--th-bg)}
   <div class="dlg-foot"><button class="btn" id="cuCancel">Cancelar</button><span class="spacer"></span><button class="btn primary" id="cuOk">Confirmar pago</button></div>
 </dialog>
 
+<dialog id="dlgComp" class="compdlg">
+  <div class="dlg-head"><h3 id="cpTitulo">Comparativo con el Excel madre</h3><span class="spacer"></span><button type="button" class="btn sm" id="cpFull" title="Ver en pantalla completa">⛶ Pantalla completa</button></div>
+  <div class="dlg-body" id="cpBody">
+    <div class="row cpsrc" style="margin:0 0 10px;gap:8px"><div id="cpOrigen" class="small" style="flex:1 1 400px"></div><label class="btn" id="cpSubirBtn">Subir el Excel madre…<input type="file" id="cpSubir" accept=".xlsx" hidden></label></div>
+    <div id="cpConc"></div>
+    <div class="tablewrap" style="margin-bottom:12px;max-height:none"><table class="grid" id="cpTotales"></table></div>
+    <div id="cpExplica"></div>
+    <div id="cpDetalle"></div>
+    <div class="f" style="margin-top:12px"><label>Observación (queda en el registro)</label><input id="cpObs" placeholder="ej. el pie de febrero estaba mal sumado"></div>
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" id="cpCerrar">Cerrar</button><button type="button" class="btn" id="cpPdf">PDF / Imprimir</button><button type="button" class="btn" id="cpViejo" title="La lista de posibles causas de antes">Vista anterior</button><span class="spacer"></span><button type="button" class="btn" id="cpReabrir" hidden>Reabrir la diferencia</button><button type="button" class="btn" id="cpExcelOk">Tenía razón el Excel</button><button type="button" class="btn primary" id="cpProgOk">Tenía razón el programa</button></div>
+</dialog>
 <dialog id="dlgConc" style="width:min(1150px,96vw)">
   <div class="dlg-head"><h3 id="coTitulo">Diferencia con el Excel madre</h3></div>
   <div class="dlg-body">
@@ -1740,13 +1757,13 @@ function renderRec(){
    meses.map(x=>{const t=totalesMes(x);const ex=S.meta[x]?.excel;const dif=ex&&ex.total!=null?r2(t.total-ex.total):null;const nota=S.meta[x]?.nota||'';
      T.n+=t.n;T.contado+=t.contado;T.mitad+=t.mitad;T.planes+=t.planes;T.total+=t.total;T.ex+=ex&&ex.total!=null?ex.total:t.total;
      return `<tr style="cursor:pointer" data-m="${x}"><td class="nw">${mesLabel(x)}</td><td class="n">${t.n}</td><td class="n">${money(t.contado)}</td><td class="n"><b>${money(t.mitad)}</b></td><td class="n">${money(t.planes)}</td><td class="n"><b>${money(t.total)}</b></td>
-       <td class="n muted">${ex&&ex.total!=null?money(ex.total):'—'}</td><td class="n" ${nota?`title="${esc(nota)}"`:''}>${dif==null?'<span class="muted">sin pie</span>':Math.abs(dif)<0.05?'<span class="tag liq">coincide</span>':concVigente(x)?`<span class="tag ok" title="${esc(concVigente(x).obs||'')}">✓ conciliado · ${concVigente(x).quien==='excel'?'Excel':'programa'}</span>`:`<button type="button" class="tag ${Math.abs(dif)<5?'pend':'emb'} difbtn" data-conc="${x}" title="Ver dónde está la diferencia y resolverla">${money(dif)} ›</button>${nota&&notasIdx.includes(x)?` <span class="notachip">nota ${notasIdx.indexOf(x)+1}</span>`:''}`}</td></tr>`}).join('')+
+       <td class="n muted">${ex&&ex.total!=null?money(ex.total):'—'}</td><td class="n" ${nota?`title="${esc(nota)}"`:''}>${dif==null?'<span class="muted">sin pie</span>':Math.abs(dif)<0.05?'<span class="tag liq">coincide</span>':concVigente(x)?`<button type="button" class="tag ok difbtn" data-rev="${x}" title="${esc((concVigente(x).obs||'')+' · Tocá para revisarla de nuevo')}">✓ conciliado · ${concVigente(x).quien==='excel'?'Excel':'programa'} ›</button>`:`<button type="button" class="tag ${Math.abs(dif)<5?'pend':'emb'} difbtn" data-conc="${x}" title="Ver dónde está la diferencia y resolverla">${money(dif)} ›</button>${nota&&notasIdx.includes(x)?` <span class="notachip">nota ${notasIdx.indexOf(x)+1}</span>`:''}`}</td></tr>`}).join('')+
    `</tbody><tfoot><tr><td>TOTAL A LA FECHA</td><td class="n">${T.n}</td><td class="n">${money(T.contado)}</td><td class="n">${money(T.mitad)}</td><td class="n">${money(T.planes)}</td><td class="n">${money(T.total)}</td><td class="n">${money(T.ex)}</td><td class="n">${money(T.total-T.ex)}</td></tr></tfoot>`;
   const notas=notasIdx;
   $('#rNotas').innerHTML=notas.length?'<b>Diferencias con el Excel madre (pie de cada hoja):</b><ul style="margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px">'+notas.map((x,i)=>`<li><span class="notachip">nota ${i+1}</span> <b>${mesLabel(x)}:</b> ${esc(S.meta[x].nota)}</li>`).join('')+'</ul>':'';
   $('#rAcum').innerHTML=`<div class="kpi"><div class="l">Recaudación total a la fecha (${meses.length} meses)</div><div class="v">${money(T.total)}</div></div><div class="kpi"><div class="l">Contado + 1ª cuota acumulado</div><div class="v">${money(T.contado)}</div></div><div class="kpi"><div class="l">50% honorarios acumulado</div><div class="v">${money(T.mitad)}</div></div><div class="kpi"><div class="l">Cuotas de planes anteriores acumulado</div><div class="v">${money(T.planes)}</div></div>`;
   renderAlertaRec();actualizarTitileo();
-  $$('#rTabla tr[data-m]').forEach(tr=>tr.onclick=()=>{const x=tr.dataset.m;sel.value=x;renderRec();if(tr.querySelector('[data-conc]'))abrirConciliacion(x)});
+  $$('#rTabla tr[data-m]').forEach(tr=>tr.onclick=()=>{const x=tr.dataset.m;sel.value=x;renderRec();if(tr.querySelector('[data-conc],[data-rev]'))abrirComparativo(x)});
 }
 
 /* ================== ANTECEDENTES ================== */
@@ -3115,6 +3132,7 @@ async function aplicarImportMes(){
     const mt=P.h.meta;if(mt&&(mt.planesAnteriores!=null||Object.keys(mt.excel||{}).length)){S.meta[m]=S.meta[m]||{};if(mt.planesAnteriores!=null)S.meta[m].planesAnteriores=mt.planesAnteriores;S.meta[m].excel=Object.assign(S.meta[m].excel||{},mt.excel)}
     if((nN||nC||nB)&&S.cierres[m])S.cierres[m].desact=new Date().toISOString();
     if(r2(totalesMes(m).mitad)!==r2(mitAntes)){S.meta[m]=S.meta[m]||{};S.meta[m].recAlerta={t:t0,antes:mitAntes}}
+    cpGuardarCopia(m,IMP.archivo,P.h);
     logA('Importación de planilla mensual',`${mesLabel(m)} desde “${IMP.archivo}” (hoja ${P.h.nombre}) · ${nN} nuevos · ${nC} modificados · ${nB} a la papelera · ${P.iguales.length} sin cambios`);
     res.push({m,nN,nC,nB})}
   save();await flush();$('#dlgImpMes').close();
@@ -3785,6 +3803,7 @@ async function coCompararExcel(file){
   const m=coMes;const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());let hoja=null,h=null;
   wb.eachSheet(ws=>{if(h&&mesDeHoja(hoja)===m)return;const x=leerHoja(ws);if(x&&x.list.length&&(!h||mesDeHoja(ws.name)===m)){h=x;hoja=ws.name}});
   if(!h){toast('No encontré una planilla mensual en ese Excel',true);return}
+  cpGuardarCopia(m,file.name,{nombre:hoja,...h});save();
   const out=[];ctPlanilla(hoja,h,m,out);const dif=out.filter(x=>x.dg!=='ok');
   dif.forEach(x=>{const ord=normTxt((x.ref||'').split(' · ')[0]);const r=S.rows.find(r=>r.mes===m&&((ord&&ord!=='S N'&&normTxt(r.orden)===ord)||(x.partida&&ctId(r.partida)===ctId(x.partida))));if(r)x.rid=r.id});
   dif.sort((a,b)=>(a.ref==='Pie de la hoja'?0:1)-(b.ref==='Pie de la hoja'?0:1));pintarCandidatos(m,[],dif);toast(dif.length?`${dif.length} diferencia(s) con la hoja ${hoja}`:`La hoja ${hoja} coincide renglón por renglón con el programa`);
@@ -4484,7 +4503,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.10.29.2';
+const APP_VERSION='2026.10.29.3';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
@@ -4570,6 +4589,135 @@ function carpListo(){$('#carpBar').hidden=true;try{localStorage.setItem(CARP_KEY
   $('#lEntrar').onclick=entrar;
   setTimeout(buscarActualizacion,300)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(go,0));else go()})();
+
+/* ================== COMPARATIVO CON EL EXCEL MADRE ==================
+   Compara renglón por renglón lo que vino en el Excel madre con lo cargado en el programa y explica de dónde sale
+   la diferencia: error en el pie del Excel, pagos que están en uno solo, importes distintos y planes anteriores.
+   Cada vez que se importa o se sube el Excel queda guardada una copia de sus renglones para volver a revisar. */
+const CP_CAMPOS=['orden','fPago','partida','cert','demandado','apoderado','expte','juzg','capital','plan','cuotas','cuotas2','cantCuotas','causCont','causContTxt','tasa','sobretasa','bono','jus','honConv','contrad','mitad','medida'];
+function cpGuardarCopia(m,archivo,h){if(!m||!h||!h.list)return;S.meta[m]=S.meta[m]||{};
+  S.meta[m].excelFilas={archivo,hoja:h.nombre||'',t:new Date().toISOString(),pie:h.meta&&h.meta.excel?{...h.meta.excel,planes:h.meta.planesAnteriores??h.meta.excel.planes}:null,filas:h.list.map(o=>{const x={};CP_CAMPOS.forEach(k=>{if(o[k]!==undefined&&o[k]!==''&&o[k]!==0)x[k]=o[k]});return x})}}
+const cpCont=r=>r.cuotaPlan?0:r2((+r.capital||0)+primeraCuota(r.cuotas)+primeraCuota(r.cuotas2));
+const cpMit=r=>r2(+r.mitad||0);
+const cpOrd=o=>{const t=normTxt(o.orden||'');return t&&!/^S ?N$/.test(t)?t:''};
+const cpDem=o=>normTxt(o.demandado||'').replace(/ /g,'').slice(0,12);
+const cpPart=o=>normTxt(o.partida||'').replace(/[^A-Z0-9]/g,'');
+/* empareja los renglones del Excel con los pagos del programa */
+function cpEmparejar(m){
+  const ex=(S.meta[m]?.excelFilas?.filas||[]).map((o,i)=>({o,i}));const pr=S.rows.filter(r=>r.mes===m);const libres=new Set(pr);const pares=[];const soloEx=[];
+  const pasos=[(o,r)=>cpOrd(o)&&cpOrd(o)===cpOrd(r)&&cpDem(o)===cpDem(r),(o,r)=>cpPart(o)&&cpPart(o)===cpPart(r)&&cpDem(o)===cpDem(r)&&(o.fPago||'')===(r.fPago||''),(o,r)=>cpPart(o)&&cpPart(o)===cpPart(r)&&cpDem(o)===cpDem(r),(o,r)=>cpOrd(o)&&cpOrd(o)===cpOrd(r),(o,r)=>cpDem(o)===cpDem(r)&&Math.abs(cpCont(o)-cpCont(r))<0.05&&Math.abs(cpMit(o)-cpMit(r))<0.05]
+  const pend=[...ex];
+  for(const f of pasos){for(let k=pend.length-1;k>=0;k--){const x=pend[k];const r=[...libres].find(r=>f(x.o,r));if(r){libres.delete(r);pares.push({x,r});pend.splice(k,1)}}}
+  pend.sort((a,b)=>a.i-b.i).forEach(x=>soloEx.push(x));
+  return {pares:pares.sort((a,b)=>a.x.i-b.x.i),soloEx,soloPr:[...libres].sort((a,b)=>(a.fPago||'').localeCompare(b.fPago||'')||String(a.orden||'').localeCompare(String(b.orden||'')))}}
+const CP_DIF=[['contado','Contado + 1ª cuota',cpCont],['mitad','50% Municipio',cpMit],['causCont','Causídico',o=>r2(+o.causCont||0)]];
+const CP_SUB=[['capital','· capital al contado',o=>r2(+o.capital||0)],['cuotas','· 1ª cuota',o=>primeraCuota(o.cuotas)],['cuotas2','· 1ª cuota 2º juicio',o=>primeraCuota(o.cuotas2)]];
+const CP_TOL=0.05; // hasta 4 centavos es redondeo
+const CP_DATOS=[['fPago','Fecha de pago'],['orden','N° de orden'],['partida','Partida'],['demandado','Demandado'],['apoderado','Apoderado']];
+function cpAnalizar(m){
+  const C=S.meta[m]?.excelFilas;if(!C)return null;const E=cpEmparejar(m);const t=totalesMes(m);
+  const pie=C.pie||S.meta[m]?.excel||{};const ex=C.filas;
+  const sumEx={contado:r2(ex.reduce((s,o)=>s+cpCont(o),0)),mitad:r2(ex.reduce((s,o)=>s+cpMit(o),0))};
+  const red={contado:0,mitad:0};E.pares.forEach(({x,r})=>{const dc=cpCont(r)-cpCont(x.o),dm=cpMit(r)-cpMit(x.o);if(Math.abs(dc)<CP_TOL)red.contado+=dc;if(Math.abs(dm)<CP_TOL)red.mitad+=dm});
+  const difs=E.pares.map(({x,r})=>{const o=x.o;const d=CP_DIF.filter(([k,,f])=>Math.abs(f(o)-f(r))>=CP_TOL).map(([k,l,f])=>({k,l,ex:f(o),pr:f(r)}));if(d.some(q=>q.k==='contado'))CP_SUB.forEach(([k,l,f])=>{if(Math.abs(f(o)-f(r))>=0.01)d.push({k,l,ex:f(o),pr:f(r),sub:1})});
+    const dat=CP_DATOS.filter(([k])=>normTxt(o[k]||'')!==normTxt(r[k]||'')).map(([k,l])=>({k,l,ex:o[k]||'',pr:r[k]||''}));return {o,i:x.i,r,d,dat}}).filter(z=>z.d.length||z.dat.some(q=>q.k==='fPago'));
+  const S_=(L,f)=>r2(L.reduce((s,z)=>s+f(z),0));
+  const lin={
+    pie:{contado:pie.contado!=null?r2(sumEx.contado-pie.contado):0,mitad:pie.mitad!=null?r2(sumEx.mitad-pie.mitad):0},
+    soloPr:{contado:S_(E.soloPr,cpCont),mitad:S_(E.soloPr,cpMit)},
+    soloEx:{contado:-S_(E.soloEx,z=>cpCont(z.o)),mitad:-S_(E.soloEx,z=>cpMit(z.o))},
+    dif:{contado:S_(difs,z=>{const v=cpCont(z.r)-cpCont(z.o);return Math.abs(v)>=CP_TOL?v:0}),mitad:S_(difs,z=>{const v=cpMit(z.r)-cpMit(z.o);return Math.abs(v)>=CP_TOL?v:0})},
+    red:{contado:r2(red.contado),mitad:r2(red.mitad)},
+    planes:{planes:pie.planes!=null?r2(t.planes-pie.planes):0}};
+  return {m,C,E,t,pie,sumEx,difs,lin}}
+let cpMesAct=null;
+function abrirComparativo(m){cpMesAct=m;$('#cpTitulo').textContent='Comparativo con el Excel madre · '+mesLabel(m);$('#cpObs').value='';pintarComparativo();if(!$('#dlgComp').open)$('#dlgComp').showModal()}
+function cpFueraDeMes(r,m){return r.fPago&&r.fPago.slice(0,7)!==m}
+function pintarComparativo(){
+  const m=cpMesAct;const A=cpAnalizar(m);const t=totalesMes(m);const pie=S.meta[m]?.excel||{};const conc=concVigente(m);
+  $('#cpReabrir').hidden=!conc;$('#cpReabrir').style.display=conc?'':'none';
+  $('#cpConc').innerHTML=conc?`<div class="note">Esta diferencia está marcada como <b>conciliada</b> (tenía razón ${conc.quien==='excel'?'el Excel':'el programa'}) el ${new Date(conc.t).toLocaleString('es-AR')} por ${esc(nombreU(conc.u))}${conc.obs?': “'+esc(conc.obs)+'”':''}. Podés revisarla de nuevo acá; si encontrás el error, corregilo y tocá “Reabrir la diferencia” o volvé a marcar quién tenía razón.</div>`:'';
+  if(!A){$('#cpOrigen').innerHTML=`<b>No hay una copia del Excel de ${esc(mesLabel(m))} guardada en el programa.</b> Subí el Excel madre (puede tener todos los meses: se guardan todas las hojas para revisar después) y el programa compara renglón por renglón.`;
+    $('#cpTotales').innerHTML=`<thead><tr><th>Concepto</th><th class="n">Programa</th><th class="n">Pie del Excel</th><th class="n">Diferencia</th></tr></thead><tbody>`+[['Contado y 1ª cuota de planes',t.contado,pie.contado],['50% honorarios del Municipio',t.mitad,pie.mitad],['Cuotas de planes anteriores',t.planes,pie.planes],['<b>Total ingresos</b>',t.total,pie.total]].map(([l,p,e])=>`<tr><td>${l}</td><td class="n">${money(p)}</td><td class="n">${e==null?'—':money(e)}</td><td class="n">${e==null?'':cpDifTxt(p-e)}</td></tr>`).join('')+'</tbody>';
+    $('#cpExplica').innerHTML='';$('#cpDetalle').innerHTML='';return}
+  const C=A.C;$('#cpOrigen').innerHTML=`Excel: <b>${esc(C.archivo||'')}</b>${C.hoja?' · hoja <b>'+esc(C.hoja)+'</b>':''} · copia guardada el ${new Date(C.t).toLocaleString('es-AR')} · ${C.filas.length} renglones. <span class="muted">Si cambió el Excel, subilo de nuevo.</span>`;
+  const P=A.pie;const sEx={contado:A.sumEx.contado,mitad:A.sumEx.mitad,planes:P.planes,total:r2(A.sumEx.contado+A.sumEx.mitad+(+P.planes||0))};
+  const fila=(l,p,se,e)=>`<tr><td>${l}</td><td class="n"><b>${money(p)}</b></td><td class="n">${se==null?'—':money(se)}</td><td class="n">${e==null?'—':money(e)}</td><td class="n">${e==null?'':cpDifTxt(p-e)}</td></tr>`;
+  $('#cpTotales').innerHTML=`<thead><tr><th>Concepto</th><th class="n">Programa</th><th class="n">Suma de los renglones del Excel</th><th class="n">Pie del Excel</th><th class="n">Diferencia programa − pie</th></tr></thead><tbody>${fila('Contado y 1ª cuota de planes',t.contado,sEx.contado,P.contado)}${fila('50% honorarios del Municipio',t.mitad,sEx.mitad,P.mitad)}${fila('Cuotas de planes anteriores',t.planes,null,P.planes)}${fila('<b>Total ingresos</b>',t.total,sEx.total,P.total)}</tbody>`;
+  // explicación de la diferencia
+  const L=A.lin;const tot=k=>r2((L.pie[k]||0)+(L.soloPr[k]||0)+(L.soloEx[k]||0)+(L.dif[k]||0)+(L.red[k]||0));
+  const tc=tot('contado'),tm=tot('mitad'),tp=L.planes.planes;
+  const lp=(l,c,mi,pl,sug,n)=>{const z=Math.abs(c||0)<0.01&&Math.abs(mi||0)<0.01&&Math.abs(pl||0)<0.01;return `<tr class="${z?'cero':''}"><td>${l}${n!=null&&!z?` <span class="muted small">(${n})</span>`:''}${sug&&!z?`<div class="sug">${sug}</div>`:''}</td><td class="n">${cpDifTxt(c)}</td><td class="n">${cpDifTxt(mi)}</td><td class="n">${cpDifTxt(pl)}</td><td class="n"><b>${cpDifTxt(r2((c||0)+(mi||0)+(pl||0)))}</b></td></tr>`};
+  const dTot=P.total!=null?r2(t.total-P.total):null;const sinExp=dTot==null?0:r2(dTot-(tc+tm+tp));
+  $('#cpExplica').innerHTML=`<div class="cpexp"><h4>De dónde sale la diferencia ${dTot==null?'':'de '+money(dTot)}</h4><table><thead><tr><td></td><td class="n"><b>Contado + 1ª</b></td><td class="n"><b>50%</b></td><td class="n"><b>Planes ant.</b></td><td class="n"><b>Total</b></td></tr></thead><tbody>
+    ${lp('Error en la suma del pie del Excel',L.pie.contado,L.pie.mitad,0,'El pie del Excel no da lo mismo que la suma de sus renglones: el error está en el Excel.')}
+    ${lp('Pagos que están en el programa y no en el Excel',L.soloPr.contado,L.soloPr.mitad,0,'Si corresponden a este mes, el Excel los omitió; si no, revisá la fecha o si están duplicados.',A.E.soloPr.length)}
+    ${lp('Pagos que están en el Excel y no en el programa',L.soloEx.contado,L.soloEx.mitad,0,'Faltan cargar en el programa (o el Excel los tiene de más).',A.E.soloEx.length)}
+    ${lp('Pagos con importes distintos',L.dif.contado,L.dif.mitad,0,'El mismo pago tiene otro importe en el programa que en el Excel.',A.difs.filter(z=>z.d.some(q=>q.k==='contado'||q.k==='mitad')).length)}
+    ${lp('Redondeos de centavos',L.red.contado,L.red.mitad,0,'Diferencias de 1 a 4 centavos por redondeo en algunos pagos: no hace falta corregir nada.')}
+    ${lp('Cuotas de planes anteriores distintas del pie',0,0,tp,'Las cuotas 2ª en adelante cargadas en el programa no dan lo mismo que el pie del Excel.')}
+    <tr class="tot"><td>Diferencia total (programa − pie del Excel)</td><td class="n">${cpDifTxt(tc)}</td><td class="n">${cpDifTxt(tm)}</td><td class="n">${cpDifTxt(tp)}</td><td class="n">${cpDifTxt(r2(tc+tm+tp))}</td></tr>
+    ${Math.abs(sinExp)>=0.05?`<tr><td colspan="5" class="sug" style="color:var(--bad)">Quedan ${money(sinExp)} sin explicar por los renglones: revisá el pie del Excel (total).</td></tr>`:''}</tbody></table></div>`;
+  // detalle
+  const ver=r=>`<button type="button" class="btn sm" data-cpver="${r.id}">Ver</button><button type="button" class="btn sm" data-cped="${r.id}">Abrir y corregir</button>`;
+  const ident=o=>`<b>${esc(o.orden||'s/n')}</b> · ${dmy(o.fPago)}<div class="small">${esc(o.demandado||'')}</div><div class="muted small">${esc(o.partida||'')}${o.apoderado?' · '+esc(o.apoderado):''}</div>`;
+  const dup=r=>{const o=S.rows.find(x=>x!==r&&x.mes===m&&cpPart(x)===cpPart(r)&&cpPart(r)&&Math.abs(cpCont(x)-cpCont(r))<0.05&&Math.abs(cpMit(x)-cpMit(r))<0.05);return o};
+  const quePr=r=>{const q=[];if(cpFueraDeMes(r,m))q.push(`La fecha de pago (<b>${dmy(r.fPago)}</b>) no es de ${esc(mesLabel(m))}: revisá si está mal tipeada.`);const d=dup(r);if(d)q.push(`Puede estar <b>duplicado</b> con ${esc(d.orden||'s/n')} (${dmy(d.fPago)}): misma partida e importes.`);
+    if(r.partidaDe){const pa=S.rows.find(x=>x.id===r.partidaDe);if(pa)q.push(`Es un certificado del pago ${esc(pa.orden||'s/n')}.`)}
+    if(!q.length)q.push(r.creado&&S.meta[m]?.excelFilas&&r.creado>S.meta[m].excelFilas.t?'Se cargó en el programa después de esta copia del Excel: si corresponde, el Excel lo omitió.':'El Excel no lo tiene: si corresponde a este mes, tenía razón el programa; si no, corregilo o eliminalo.');return q.join('<br>')};
+  const sec=(tit,cnt,tag,html)=>`<div class="cpsec"><h4>${tit} <span class="tag ${tag}">${cnt}</span></h4>${html}</div>`;
+  let h='';
+  h+=Math.abs(L.pie.contado)>=0.01||Math.abs(L.pie.mitad)>=0.01?sec('El pie del Excel está mal sumado','!','emb',`<div class="note warn">El pie dice contado ${money(P.contado)} y 50% ${money(P.mitad)}, pero los renglones de la hoja suman contado ${money(A.sumEx.contado)} y 50% ${money(A.sumEx.mitad)}. <b>Qué corregir:</b> el pie del Excel (en el programa no hay nada que cambiar por esto).${cpPista(A)}</div>`):'';
+  h+=sec('Pagos que están en el programa y no en el Excel',A.E.soloPr.length,A.E.soloPr.length?'pend':'liq',A.E.soloPr.length?`<div class="tablewrap"><table class="grid"><thead><tr><th>Pago</th><th class="n">Contado + 1ª</th><th class="n">50%</th><th>Qué revisar</th><th style="width:1%"></th></tr></thead><tbody>${A.E.soloPr.map(r=>`<tr><td>${ident(r)}</td><td class="n">${money(cpCont(r))}</td><td class="n">${money(cpMit(r))}</td><td class="cpque">${quePr(r)}</td><td><div class="acts">${ver(r)}</div></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted small" style="margin:0">Ninguno.</p>');
+  h+=sec('Pagos que están en el Excel y no en el programa',A.E.soloEx.length,A.E.soloEx.length?'pend':'liq',A.E.soloEx.length?`<div class="tablewrap"><table class="grid"><thead><tr><th>Renglón del Excel</th><th class="n">Contado + 1ª</th><th class="n">50%</th><th>Qué revisar</th><th style="width:1%"></th></tr></thead><tbody>${A.E.soloEx.map(z=>`<tr><td>${ident(z.o)}</td><td class="n">${money(cpCont(z.o))}</td><td class="n">${money(cpMit(z.o))}</td><td class="cpque">Falta en el programa. Si el pago existe, agregalo; si el Excel lo tiene de más, tenía razón el programa.</td><td><div class="acts"><button type="button" class="btn sm primary" data-cpadd="${z.i}">Agregar al programa</button></div></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted small" style="margin:0">Ninguno.</p>');
+  h+=sec('Pagos con datos distintos',A.difs.length,A.difs.length?'pend':'liq',A.difs.length?`<div class="tablewrap"><table class="grid"><thead><tr><th>Pago</th><th>Qué cambia (<span style="color:#b45309">Excel</span> → <span style="color:var(--pri)">programa</span>)</th><th style="width:1%"></th></tr></thead><tbody>${A.difs.map((z,k)=>`<tr><td>${ident(z.r)}</td><td><div class="cpdif">${z.d.map(q=>`<b style="${q.sub?'font-weight:400;padding-left:10px':''}">${esc(q.l)}</b><span class="ex">${money(q.ex)}</span><span class="pr">${money(q.pr)}</span><span>${cpDifTxt(q.pr-q.ex)}</span>`).join('')}${z.dat.map(q=>`<b>${esc(q.l)}</b><span class="ex">${esc(q.k==='fPago'?dmy(q.ex):q.ex)}</span><span class="pr">${esc(q.k==='fPago'?dmy(q.pr):q.pr)}</span><span></span>`).join('')}</div>${z.d.length?'':'<div class="small muted">Sólo cambian datos (no importes).</div>'}</td><td><div class="acts">${z.d.some(q=>!q.sub)?`<button type="button" class="btn sm" data-cpusar="${k}" title="Copia al pago los importes del Excel">Usar los importes del Excel</button>`:''}${ver(z.r)}</div></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted small" style="margin:0">Ninguno: los pagos que están en los dos coinciden.</p>');
+  $('#cpDetalle').innerHTML=h;
+  $$('#cpDetalle [data-cpver]').forEach(b=>b.onclick=()=>verPago(b.dataset.cpver));
+  $$('#cpDetalle [data-cped]').forEach(b=>b.onclick=()=>{openForm(b.dataset.cped);$('#dlg').addEventListener('close',()=>{if($('#dlgComp').open)pintarComparativo();renderRec()},{once:true})});
+  $$('#cpDetalle [data-cpadd]').forEach(b=>b.onclick=()=>cpAgregar(m,+b.dataset.cpadd));
+  $$('#cpDetalle [data-cpusar]').forEach(b=>b.onclick=()=>cpUsarExcel(m,A.difs[+b.dataset.cpusar]));
+}
+/* si el error del pie es igual a la diferencia de un pago puntual, se explica juntos */
+function cpPista(A){const pc=A.lin.pie.contado,pm=A.lin.pie.mitad;const z=A.difs.find(z=>{const dc=cpCont(z.r)-cpCont(z.o),dm=cpMit(z.r)-cpMit(z.o);return (Math.abs(pc)>=1&&Math.abs(pc+dc)<CP_TOL)||(Math.abs(pm)>=1&&Math.abs(pm+dm)<CP_TOL)});if(!z)return '';
+  return `<div style="margin-top:6px"><b>Pista:</b> la diferencia del pie es la misma que la del pago <b>${esc(z.r.orden||'s/n')} · ${esc(z.r.demandado||'')}</b>: en el Excel ese renglón tiene ${money(cpCont(z.o))} de contado + 1ª cuota pero el pie no lo suma, y en el programa está en ${money(cpCont(z.r))}. Si ese pago tuvo ese importe, corregí el pie del Excel y el pago en el programa (“Usar los importes del Excel”); si no lo tuvo, el error es sólo de ese renglón del Excel y tenía razón el programa.</div>`}
+const cpDifTxt=d=>{d=r2(+d||0);return Math.abs(d)<0.01?'<span class="muted">—</span>':`<span style="color:var(--bad);font-weight:700">${d>0?'+ ':'− '}${money(Math.abs(d))}</span>`};
+async function cpAgregar(m,i){const o=S.meta[m]?.excelFilas?.filas?.[i];if(!o)return;if(!await permitirMes(m,'Agregar un pago desde el Excel madre'))return;
+  if(!confirmar(`¿Agregar al programa el pago ${o.orden||'s/n'} · ${o.demandado||''} con los datos del Excel?`))return;
+  const med=(o.medida||'').toUpperCase();const sinc=/SIN/.test((o.causContTxt||'').toUpperCase())||!o.mitad;
+  const r=Object.assign({id:uid(),mes:m,emb:/\bEMB/.test(med)&&!/LEVANT/.test(med),embLote:'',hon:null,honEstado:sinc?'nc':'pend',creado:new Date().toISOString(),creadoPor:SES.u,importado:S.meta[m].excelFilas.archivo},JSON.parse(JSON.stringify(o)));
+  NUMF.forEach(k=>{r[k]=+r[k]||0});S.rows.push(r);logA('Comparativo: pago agregado desde el Excel madre',rowTxt(r));save();refresh();pintarComparativo();toast('Pago agregado: '+(o.orden||'s/n'))}
+async function cpUsarExcel(m,z){if(!z)return;if(!puedeEditarPagos()&&!await askAdmin('<b>Modificar un pago</b><br><br>Usar los importes del Excel madre en el pago '+esc(z.r.orden||'s/n')+'.',true))return;if(!await permitirMes(m,'Corregir un pago desde el Excel madre'))return;
+  const campos=['capital','cuotas','cuotas2','mitad','causCont','honConv','contrad','tasa','sobretasa','bono','jus','aranceles'];const r=z.r;const antes={};const o=z.o;
+  const cambia=campos.filter(k=>k in o||(+r[k]||0)!==0).filter(k=>NUMF.includes(k)?Math.abs((+o[k]||0)-(+r[k]||0))>=0.01:String(o[k]||'')!==String(r[k]||''));
+  if(!cambia.length){toast('No hay importes para cambiar');return}
+  if(!confirmar(`¿Poner en el pago ${r.orden||'s/n'} los importes del Excel?\n\n`+cambia.map(k=>`${k}: ${NUMF.includes(k)?money(+r[k]||0):r[k]||'—'} → ${NUMF.includes(k)?money(+o[k]||0):o[k]||'—'}`).join('\n')))return;
+  cambia.forEach(k=>{antes[k]=r[k];r[k]=NUMF.includes(k)?(+o[k]||0):(o[k]||'')});
+  if(r.honEstado==='liq'&&Math.abs((+antes.mitad||0)-(+r.mitad||0))>=0.01)r.honAlerta={t:new Date().toISOString(),motivo:'Corregido desde el comparativo con el Excel madre de '+mesLabel(m),mitadAntes:antes.mitad,mitadAhora:r.mitad,liqMes:r.honMes};
+  logA('Comparativo: importes del Excel madre aplicados',rowTxt(r)+' · '+cambia.map(k=>`${k}: ${antes[k]??''} → ${r[k]??''}`).join(' · '));save();refresh();pintarComparativo();toast('Pago corregido con los importes del Excel')}
+async function cpSubirExcel(file){
+  const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());const guard=[];
+  wb.eachSheet(ws=>{const h=leerHoja(ws);if(!h||!h.list.length)return;let mes=mesDeHoja(ws.name,h.list);if(!mes){const c={};h.list.forEach(o=>{if(o.fPago)c[o.fPago.slice(0,7)]=(c[o.fPago.slice(0,7)]||0)+1});mes=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||''}
+    if(!mes)return;cpGuardarCopia(mes,file.name,{nombre:ws.name,...h});guard.push(mes)});
+  if(!guard.length){toast('No encontré en ese Excel una planilla con los títulos de columna (N° de orden, partida, demandado…)',true);return}
+  logA('Comparativo: copia del Excel madre guardada',`“${file.name}” · ${guard.map(mesLabel).join(', ')}`);save();pintarComparativo();
+  toast(guard.includes(cpMesAct)?`Excel leído: se guardaron ${guard.length} mes(es) para comparar (${guard.map(mesLabel).join(', ')})`:`El Excel no tiene la hoja de ${mesLabel(cpMesAct)}; se guardaron: ${guard.map(mesLabel).join(', ')}`,!guard.includes(cpMesAct))}
+function cpResolver(quien){
+  const m=cpMesAct;const t=totalesMes(m);const ex=S.meta[m]?.excel||{};const d=ex.total!=null?r2(t.total-ex.total):0;const obs=$('#cpObs').value.trim();
+  if(quien==='excel'&&Math.abs(d)>=0.05&&!confirmar(`Todavía hay ${money(d)} de diferencia entre el programa y el Excel. Si el Excel tenía razón, corregí los pagos con “Usar los importes del Excel” o “Abrir y corregir”. ¿Marcarlo igual como resuelto?`))return;
+  S.meta[m]=S.meta[m]||{};S.meta[m].conciliado={quien,obs,t:new Date().toISOString(),u:SES.u,total:t.total,mitad:t.mitad,dif:d};
+  logA('Conciliación con el Excel madre',`${mesLabel(m)}: tenía razón ${quien==='excel'?'el Excel':'el programa'} · diferencia ${money(d)}${obs?' · '+obs:''}`);
+  save();$('#dlgComp').close();renderRec();toast(`Diferencia de ${mesLabel(m)} resuelta: quedó registrado que tenía razón ${quien==='excel'?'el Excel':'el programa'}`)}
+function cpReabrir(){const m=cpMesAct;if(!S.meta[m]?.conciliado)return;if(!confirmar('¿Reabrir la diferencia de '+mesLabel(m)+'? Vuelve a aparecer como pendiente en Recaudación.'))return;
+  const c=S.meta[m].conciliado;delete S.meta[m].conciliado;logA('Conciliación reabierta',`${mesLabel(m)} · estaba como “tenía razón ${c.quien==='excel'?'el Excel':'el programa'}”${$('#cpObs').value.trim()?' · '+$('#cpObs').value.trim():''}`);save();renderRec();pintarComparativo();toast('Diferencia reabierta')}
+function cpImprimir(){const m=cpMesAct;const b=$('#cpBody').cloneNode(true);b.querySelectorAll('button,input,label.btn,.cpsrc label').forEach(x=>x.remove());b.querySelectorAll('.tablewrap').forEach(x=>x.style.maxHeight='none');
+  printHTML(`<div class="pg" style="padding:10mm 12mm">${hdrPrint(hoyISO(),'Comparativo con el Excel madre · '+mesLabel(m))}<div class="cuerpo"><style>table{border-collapse:collapse;width:100%;font-size:8.5pt;margin-bottom:8px}td,th{border:1px solid #999;padding:3px 5px;vertical-align:top;text-align:left}.n{text-align:right}h4{margin:10px 0 4px;font-size:10pt}.cpdif{display:grid;grid-template-columns:auto auto auto auto;gap:1px 8px}.tag{border:1px solid #999;border-radius:8px;padding:0 5px;font-size:8pt}.note{border:1px solid #999;padding:6px;margin:6px 0;font-size:9pt}.sug{font-size:8pt;color:#555}.muted{color:#666}</style>${b.innerHTML}</div></div>`,'Comparativo '+mesLabel(m),true)}
+(function(){const go=()=>{
+  $('#cpCerrar').onclick=()=>$('#dlgComp').close();$('#cpProgOk').onclick=()=>cpResolver('programa');$('#cpExcelOk').onclick=()=>cpResolver('excel');$('#cpReabrir').onclick=cpReabrir;$('#cpPdf').onclick=cpImprimir;
+  $('#cpViejo').onclick=()=>{$('#dlgComp').close();abrirConciliacion(cpMesAct)};
+  $('#cpFull').onclick=()=>{const d=$('#dlgComp');d.classList.toggle('full');$('#cpFull').textContent=d.classList.contains('full')?'⤡ Ventana normal':'⛶ Pantalla completa'};
+  $('#dlgComp').addEventListener('close',()=>{$('#dlgComp').classList.remove('full');$('#cpFull').textContent='⛶ Pantalla completa'});
+  $('#cpSubir').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)cpSubirExcel(f).catch(err=>toast('No se pudo leer el Excel: '+err.message,true))}};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go()})();
 </script>
 </body>
 </html>
