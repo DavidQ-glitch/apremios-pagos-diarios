@@ -1,8 +1,8 @@
 {
-    "version":  "2026.10.29.3",
-    "fecha":  "2026-10-29",
-    "novedades":  "Comparativo con el Excel madre: muestra renglón por renglón dónde está cada diferencia y qué corregir; los meses conciliados se pueden revisar de nuevo. Aviso de actualización centrado.",
+    "version":  "2026.11.24.1",
+    "fecha":  "2026-11-24",
+    "novedades":  "Versión 2026.11.24.1\n- Corregido: la contraseña de un usuario (por ejemplo Luisa) dejaba de funcionar o el programa pedía crearla de nuevo cuando estaba abierto en dos ventanas o pestañas a la vez.\n- Corregido: con dos ventanas abiertas, los pagos cargados en una podían perderse al guardar desde la otra.\n- Ahora se trabaja en una sola ventana: si el programa se abre otra vez, la ventana anterior guarda todo y queda en pausa, con el botón «Seguir en esta ventana».",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "4ba726f8ceaa6b1b0e92793d837724a06cfba57a92ab0cca959c98771ff096f9",
-    "firma":  "xnqry9H5HetHdkDDJB3nwf9Yrwr9KtWeH+5gQL/QUuegHwYnUhLmHjW6sP7tILi84h66Jy24uPKjb3sw1BDrzg=="
+    "sha256":  "afd9d029702168ca69a8501aedb0467c6267012981d9d59b8a426cf21d987c79",
+    "firma":  "9sopso3zUI8+g7Z6lB2GGR0J6WFCP6pmL4xfiidVC5jxBw3DD0Lhqb+GPje8P1DFLOgKoObFE4mb7gvqztRmdQ=="
 }
