@@ -215,6 +215,9 @@ table.grid td input.num{text-align:right;width:140px}
 #cTabla td,#aTabla td{max-width:none}
 
 /* login */
+#pausaVen[hidden]{display:none}#pausaVen{position:fixed;inset:0;z-index:900;background:rgba(5,12,24,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+#pausaVen .pv{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;max-width:480px;width:100%;padding:24px 26px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+#pausaVen h3{margin:0 0 10px;font-size:18px}#pausaVen p{margin:0 0 16px;color:var(--muted)}
 #login{position:fixed;inset:0;z-index:200;background:radial-gradient(circle at 30% 20%,#1e3a5f,#0b1222 60%);display:flex;align-items:center;justify-content:center;padding:20px}
 #login[hidden]{display:none}
 .lcard{background:#fff;border-radius:20px;width:min(560px,100%);padding:28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
@@ -980,6 +983,7 @@ table.grid tfoot td{background:var(--th-bg)}
 <div id="updBar" class="avisobar" hidden><div class="ab-t"><b>Hay una actualización</b> <span id="updTxt"></span></div><div class="ab-b"><button type="button" class="btn primary" id="updOk">Actualizar ahora</button><button type="button" class="btn" id="updLater">Más tarde</button></div></div>
 <div id="carpBar" class="avisobar warn" hidden><div class="ab-t"><b>No hay carpeta de respaldo vinculada.</b> <span id="carpTxt">Vinculá una carpeta para que el programa guarde solo un respaldo por día y uno en cada cierre de mes.</span></div><div class="ab-b"><button type="button" class="btn primary" id="carpOk">Vincular carpeta</button><button type="button" class="btn" id="carpLater">Hoy no</button></div></div>
 <dialog id="dlgUpd" style="width:min(640px,94vw)"><div class="dlg-head"><h3 id="updTit">Actualización</h3></div><div class="dlg-body" id="updBody"></div><div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" id="updCerrar">Cerrar</button></div></dialog>
+<div id="pausaVen" hidden><div class="pv"><h3>🪟 El programa está abierto en otra ventana</h3><p>Para no pisar los datos ni las contraseñas, se trabaja en una sola ventana a la vez. Esta quedó en pausa: todo lo que se hizo aquí ya está guardado.</p><button class="btn primary" id="pvSeguir" type="button">Seguir en esta ventana</button></div></div>
 <div id="login" hidden>
   <div class="lout"><div class="llogo"><img id="loginLogo" alt=""></div><h2>Dirección Jurídico Contable de Apremios</h2><div class="lsub">Municipalidad de Moreno · Pagos diarios, embargos, honorarios y recaudación</div></div>
   <div class="lcard">
@@ -2112,7 +2116,7 @@ function loadAuth(){
   if(!AUTH.migPanel){const l=AUTH.users.find(u=>u.id==='luisa');if(l){l.permisos=l.permisos||{};l.permisos.panel=true}AUTH.migPanel=1;try{localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH))}catch(e){}}
   syncUsers();
 }
-function saveAuth(){try{localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH))}catch(e){}idbPut('kv','auth',JSON.stringify(AUTH)).catch(()=>{});syncUsers()}
+function saveAuth(){if(PAUSA)return;try{localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH))}catch(e){}idbPut('kv','auth',JSON.stringify(AUTH)).catch(()=>{});syncUsers()}
 const checkPass=(u,p)=>!!AUTH.pw[u]&&hashPass(p,AUTH.pw[u].salt)===AUTH.pw[u].hash;
 function setPass(u,p){const salt=randSalt();AUTH.pw[u]={salt,hash:hashPass(p,salt),set:new Date().toISOString()};saveAuth()}
 const adminsActivos=()=>(AUTH.users||[]).filter(u=>u.rol==='admin'&&u.activo!==false);
@@ -2169,6 +2173,7 @@ const modoIdb=()=>ST.modo==='idb';
 const esLleno=e=>e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014);
 function marcaIdb(){return JSON.stringify({modoIdb:true,savedAt:S.savedAt,rev:S.rev,n:(S.rows||[]).length,desde:ST.modoDesde||''})}
 function lsWrite(){
+  if(PAUSA)return false;
   if(modoIdb()){try{localStorage.setItem(LS_KEY,marcaIdb())}catch(e){}ST.ls='ok';ST.lsAt=new Date();return true}
   try{localStorage.setItem(LS_KEY,JSON.stringify(S));ST.ls='ok';ST.lsAt=new Date();return true}
   catch(e){if(esLleno(e)){pasarAIdb();return true}ST.ls='err';ST.err='El navegador no permitió guardar ('+e.name+'). Los datos siguen en la copia interna; descargá un respaldo.';return false}}
@@ -2181,6 +2186,7 @@ function pasarAIdb(){
   logA('Guardado principal pasado a la copia interna','El guardado del navegador (localStorage) se llenó; desde ahora el guardado principal es IndexedDB. No se perdió ningún dato.');
   setTimeout(()=>toast('El guardado del navegador se llenó: desde ahora los datos se guardan en la copia interna (IndexedDB). No se perdió nada.'),50)}
 function save(){
+  if(PAUSA)return;
   S.savedAt=new Date().toISOString();S.rev=(S.rev||0)+1;
   lsWrite();
   persistOK=ST.ls==='ok';
@@ -2188,7 +2194,7 @@ function save(){
   renderSaveBar();
 }
 async function flush(){
-  clearTimeout(flushTimer);if(!S)return;
+  clearTimeout(flushTimer);if(!S||PAUSA)return;
   const json=JSON.stringify(S);
   try{await idbPut('kv','state',json);ST.idb='ok';ST.idbAt=new Date()}catch(e){ST.idb='err'}
   if(SES.u&&Date.now()-ST.lastSnap>10*60*1000){await snapshot('Automática (cada 10 min de trabajo)','auto',json)}
@@ -2503,18 +2509,18 @@ function renderLoginUsers(){
   $$('.ubtn').forEach(b=>b.onclick=()=>elegirUsuario(b.dataset.u));
 }
 function showLogin(){
-  renderLoginUsers();$('#login').hidden=false;$('#lForm').hidden=true;$$('.ubtn').forEach(b=>b.classList.remove('on'));$('#lErr').textContent='';
+  loadAuth();renderLoginUsers();$('#login').hidden=false;$('#lForm').hidden=true;$$('.ubtn').forEach(b=>b.classList.remove('on'));$('#lErr').textContent='';
   if(SES.u){elegirUsuario(SES.u);$('#lMsg').innerHTML='<b>Sesión bloqueada por inactividad.</b> Todo lo hecho quedó guardado. Ingresá de nuevo para seguir.'}
 }
 function elegirUsuario(u){
-  loginU=u;$$('.ubtn').forEach(b=>b.classList.toggle('on',b.dataset.u===u));$('#lForm').hidden=false;$('#lErr').textContent='';$('#lPass').value='';$('#lPass2').value='';
+  loadAuth();loginU=u;$$('.ubtn').forEach(b=>b.classList.toggle('on',b.dataset.u===u));$('#lForm').hidden=false;$('#lErr').textContent='';$('#lPass').value='';$('#lPass2').value='';
   const nuevo=!AUTH.pw[u];$('#lPass2').hidden=!nuevo;
   $('#lMsg').innerHTML=nuevo?`<b>Primer ingreso de ${esc(USERS[u].nombre)}:</b> creá tu contraseña (mínimo 6 caracteres) y repetila.`:`Ingresá la contraseña de <b>${esc(USERS[u].nombre)}</b>.`;
   $('#lEntrar').textContent=nuevo?'Crear contraseña e ingresar':'Ingresar';
   setTimeout(()=>$('#lPass').focus(),30);
 }
 async function entrar(){
-  const u=loginU,p=$('#lPass').value;if(!u)return;
+  if(PAUSA)return;loadAuth();const u=loginU,p=$('#lPass').value;if(!u)return;
   if(!USERS[u]||USERS[u].activo===false){$('#lErr').textContent='Usuario dado de baja.';return}
   if(!AUTH.pw[u]){if(p.length<6){$('#lErr').textContent='La contraseña debe tener al menos 6 caracteres.';return}if(p!==$('#lPass2').value){$('#lErr').textContent='Las dos contraseñas no coinciden.';return}setPass(u,p);S.log=S.log||[];S.log.push({t:new Date().toISOString(),u,a:'Creación de contraseña',d:USERS[u].nombre})}
   else if(!checkPass(u,p)){$('#lErr').textContent='Contraseña incorrecta.';$('#lPass').select();return}
@@ -2534,10 +2540,30 @@ async function entrar(){
 /* ---------- inactividad ---------- */
 let lastAct=Date.now();
 ['mousemove','keydown','mousedown','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
-setInterval(()=>{if(SES.u&&AUTH.idle>0&&$('#login').hidden&&Date.now()-lastAct>AUTH.idle*60000){guardarBorrador();save();flush();logA('Bloqueo por inactividad',USERS[SES.u].nombre);showLogin()}},20000);
+setInterval(()=>{if(!PAUSA&&SES.u&&AUTH.idle>0&&$('#login').hidden&&Date.now()-lastAct>AUTH.idle*60000){guardarBorrador();save();flush();logA('Bloqueo por inactividad',USERS[SES.u].nombre);showLogin()}},20000);
 
 /* ---------- arranque ---------- */
+/* ---------- una sola ventana activa ----------
+   Si el programa se abre en otra pestaña o ventana, ésta guarda lo pendiente y queda en pausa: así una ventana
+   vieja no pisa los pagos ni las contraseñas creadas en la otra (causa de "se reinicia la clave de Luisa"). */
+let PAUSA=false;const VEN_ID=Date.now()+'-'+Math.random().toString(36).slice(2);let venCanal=null;
+function venAviso(msg){try{venCanal&&venCanal.postMessage(msg)}catch(e){}try{localStorage.setItem('apremios_ventana',JSON.stringify(Object.assign({r:Math.random()},msg)))}catch(e){}}
+let venPausando=false;
+async function venPausar(){if(PAUSA||venPausando)return;venPausando=true;try{guardarBorrador()}catch(e){}try{lsWrite();await flush()}catch(e){}PAUSA=true;
+  try{$$('dialog[open]').forEach(d=>d.close())}catch(e){}$('#pausaVen').hidden=false;venAviso({t:'pausada',id:VEN_ID})}
+function venRecibir(m){if(!m||m.id===VEN_ID)return;if(m.t==='hola'&&!PAUSA){venAviso({t:'estoy',id:VEN_ID});venPausar()}if(m.t==='estoy'&&venEspera)venEspera.hay();if(m.t==='pausada'&&venEspera)venEspera.listo()}
+let venEspera=null;
+function venIniciar(){
+  try{venCanal=new BroadcastChannel('apremios_moreno');venCanal.onmessage=e=>venRecibir(e.data)}catch(e){}
+  window.addEventListener('storage',e=>{if(e.key==='apremios_ventana'&&e.newValue){try{venRecibir(JSON.parse(e.newValue))}catch(x){}}
+    if(e.key===AUTH_KEY&&!PAUSA){loadAuth();if(!$('#login').hidden)renderLoginUsers()}});
+  /* avisa a las otras ventanas; si alguna contesta, espera (como mucho 3 s) a que termine de guardar antes de leer los datos */
+  return new Promise(res=>{let t;const fin=()=>{clearTimeout(t);venEspera=null;res()};
+    venEspera={hay:()=>{clearTimeout(t);t=setTimeout(fin,3000)},listo:()=>{clearTimeout(t);t=setTimeout(fin,100)}};
+    t=setTimeout(fin,250);venAviso({t:'hola',id:VEN_ID})});
+}
 async function boot(){
+  await venIniciar();
   await load();aplicarIdentidad();
   wireUI();instalarFormExtra();instalarImportMes();instalarDivision();instalarDistribucion();instalarNegativos();instalarControl();instalarPlanes();instalarCerts();instalarUI2();instalarInforme();instalarOjos();instalarAportesAbog();
   $('#hLema').textContent=S.config.lema;
@@ -2569,6 +2595,7 @@ async function boot(){
   renderCarga();renderSaveBar();showLogin();
 }
 document.addEventListener('DOMContentLoaded',boot);
+document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('pvSeguir');if(b)b.onclick=()=>location.reload()});
 
 /* =====================================================================
    IMPACTO DE CAMBIOS DE PARÁMETROS, ALERTAS, LOTES Y PAPELERA
@@ -4503,7 +4530,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.10.29.3';
+const APP_VERSION='2026.11.24.1';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
