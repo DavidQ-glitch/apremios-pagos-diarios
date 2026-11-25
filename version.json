@@ -1,8 +1,8 @@
 {
-    "version":  "2026.11.24.1",
-    "fecha":  "2026-11-24",
-    "novedades":  "Versión 2026.11.24.1\n- Corregido: la contraseña de un usuario (por ejemplo Luisa) dejaba de funcionar o el programa pedía crearla de nuevo cuando estaba abierto en dos ventanas o pestañas a la vez.\n- Corregido: con dos ventanas abiertas, los pagos cargados en una podían perderse al guardar desde la otra.\n- Ahora se trabaja en una sola ventana: si el programa se abre otra vez, la ventana anterior guarda todo y queda en pausa, con el botón «Seguir en esta ventana».",
+    "version":  "2026.11.25.1",
+    "fecha":  "2026-11-25",
+    "novedades":  "Versión 2026.11.25.1\n- División de honorarios: cada abogado tiene el tilde «cobra». Los honorarios se reparten en partes iguales sólo entre los que cobran (por ejemplo, 4 abogados y cobran 3).\n- Aportes: nuevas opciones «Todos sobre la base total (partes iguales)», que hace aportar también al que no cobra, y «A cargo de los que tilde (aporta)». Se mantienen «Cada uno según lo que cobra» y «Todos a cargo de…».\n- Si un abogado aporta sin cobrar honorarios, su boleta figura como «la paga él» y no se descuenta de los honorarios de los demás.\n- El anticipo Ius se sigue imputando al abogado que se elija, con independencia de quién cobre o aporte.\n- Con honorario mínimo (50 % menor al umbral) se aclara que no lleva el 10 % de aportes y que el aporte es el anticipo Ius.",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "afd9d029702168ca69a8501aedb0467c6267012981d9d59b8a426cf21d987c79",
-    "firma":  "9sopso3zUI8+g7Z6lB2GGR0J6WFCP6pmL4xfiidVC5jxBw3DD0Lhqb+GPje8P1DFLOgKoObFE4mb7gvqztRmdQ=="
+    "sha256":  "1abddddd518c985ea40f38552cad3111d8d31f9a77031c454aa6ae58644816eb",
+    "firma":  "8HlTElPENDqlpd3emWD9c+9q6Wr6EhsnonGYJnE+b6s4sMypzytwoFbtNUE6PmuDZcFm8gkWjvVqzlH+te7tBw=="
 }
