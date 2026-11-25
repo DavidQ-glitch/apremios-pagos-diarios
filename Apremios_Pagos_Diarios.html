@@ -4344,14 +4344,16 @@ function apAbPar(r){
 function apAbObl(par){
   const a=par.apAb,n=a.abogs.length,hc=par.honCuotas&&+par.honCuotas.N>1?par.honCuotas:null;const c=par.hon||honCfgBase(par);
   const hTot=hc?+hc.total||0:(+par.honConv||r2((+par.mitad||0)*2));
-  let base=c.d10===false?0:r2(hTot*0.1);const jusC=+par.jus||0;
-  if(!jusC){if(hc)base=r2(base+jusVigente(par.fPago));else if(c.dJus)base=r2(base+(+c.jus||0))}
+  /* desde la v2 del bloque, con honorario mínimo igual hay aportes: el 10% de los honorarios de los letrados (su 50%), repartido según el modo elegido */
+  const min2=a.v===2&&c.d10===false&&!!c.dJus&&par.honEstado!=='liq';
+  let base=min2?r2(hTot/2*0.1):c.d10===false?0:r2(hTot*0.1);const jusC=+par.jus||0;
+  if(!jusC&&!min2){if(hc)base=r2(base+jusVigente(par.fPago));else if(c.dJus)base=r2(base+(+c.jus||0))}
   const cob=apCobran(a);const pct=a.abogs.map(k=>cob.includes(k)?1/cob.length:0);
   const am=apAportanModo(a);
   const dist=amt=>a.abogs.map((k,i)=>am.keys?(am.keys.includes(k)?amt/am.keys.length:0):amt*pct[i]);
   let ob=dist(base);const cred=a.abogs.map(()=>0);
   if(jusC){const N=Math.max(1,(a.ant||[]).length);const each=jusC/N;for(let j=0;j<N;j++){const i=a.abogs.indexOf((a.ant||[])[j]);if(i>=0)cred[i]+=each;else{const d=dist(each);ob=ob.map((v,ii)=>v+d[ii])}}}
-  const v2=a.v===2,minimo=c.d10===false;
+  const v2=a.v===2,minimo=c.d10===false&&!min2;
   return a.abogs.map((k,i)=>{const bol=r2(Math.max(0,ob[i]-cred[i]));return {key:k,pct:pct[i],ob:r2(ob[i]),ant:r2(cred[i]),boleta:bol,cubierto:cred[i]>0&&ob[i]-cred[i]<=0.004,
     propio:v2&&pct[i]===0&&bol>0,minimo}})}
 /* quién cobra honorarios y quién hace los aportes (los pagos viejos sólo tienen reparto/aporta y se leen igual que antes) */
@@ -4561,7 +4563,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.11.25.1';
+const APP_VERSION='2026.11.25.2';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
