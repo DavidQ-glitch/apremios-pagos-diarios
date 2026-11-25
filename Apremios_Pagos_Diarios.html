@@ -215,6 +215,7 @@ table.grid td input.num{text-align:right;width:140px}
 #cTabla td,#aTabla td{max-width:none}
 
 /* login */
+.apchk{display:flex;gap:10px;margin-top:4px;font-size:12px;color:var(--muted)}.apchk label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}.apchk input{margin:0}
 #pausaVen[hidden]{display:none}#pausaVen{position:fixed;inset:0;z-index:900;background:rgba(5,12,24,.72);display:flex;align-items:center;justify-content:center;padding:20px}
 #pausaVen .pv{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;max-width:480px;width:100%;padding:24px 26px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.45)}
 #pausaVen h3{margin:0 0 10px;font-size:18px}#pausaVen p{margin:0 0 16px;color:var(--muted)}
@@ -4289,7 +4290,7 @@ function verPago(id){
   const caus=[['Tasa de justicia',S_('tasa')],['Sobretasa',S_('sobretasa')],['Bono Ley 8480',S_('bono')],['Anticipo Ius',S_('jus')],['Aranceles varios',S_('aranceles')],['Honorario convenido'+(hc?` (cuota 1 de ${hc.N})`:''),S_('honConv')],['10% contradictorio',S_('contrad')],['50% Municipio',S_('mitad')]];
   // aportes y honorario del abogado
   let ap='';const pd=dedPlanHon(r);const MA=typeof apAbCalc==='function'?apAbCalc(r):null;
-  const apTabla=MA?`<div class="tablewrap" style="margin-bottom:8px"><table class="grid"><thead><tr><th>Abogado</th><th class="n">Honorarios</th><th class="n">Aportes a su cargo</th><th class="n">Anticipo Ius imputado</th><th class="n">Boleta de aportes</th>${MA.plan?'<th class="n">Paga en esta cuota</th><th class="n">Queda</th>':''}<th>Nº de boleta</th><th>Fecha de depósito</th><th class="n">A librar</th></tr></thead><tbody>${MA.rows.map(x=>`<tr><td><b>${esc(x.key)}</b></td><td class="n">${money(x.parte)}<div class="small muted">${fmtAR.format(r2(x.pct*100))}%</div></td><td class="n">${money(x.ob)}</td><td class="n">${x.ant?'− '+money(x.ant):'—'}</td><td class="n"><b>${money(x.boleta)}</b>${x.cubierto?'<div class="small" style="color:var(--ok)">cubierto por el anticipo</div>':''}</td>${MA.plan?`<td class="n">${money(x.ded)}</td><td class="n">${money(x.saldo)}</td>`:''}<td>${esc(x.bol||'—')}</td><td>${x.fDep?dmy(x.fDep):'—'}</td><td class="n"><b>${money(honShares(r).find(s=>s.key===x.key)?.monto??r2(x.parte-x.ded))}</b></td></tr>`).join('')}</tbody></table></div><p class="hint">Honorarios ${r.apAb.reparto==='iguales'?'repartidos en partes iguales':'todos para '+esc(r.apAb.reparto)} · aportes ${r.apAb.aporta==='cada'?'de cada uno según lo que cobra':'todos a cargo de '+esc(r.apAb.aporta)}</p>`:'';
+  const apTabla=MA?`<div class="tablewrap" style="margin-bottom:8px"><table class="grid"><thead><tr><th>Abogado</th><th class="n">Honorarios</th><th class="n">Aportes a su cargo</th><th class="n">Anticipo Ius imputado</th><th class="n">Boleta de aportes</th>${MA.plan?'<th class="n">Paga en esta cuota</th><th class="n">Queda</th>':''}<th>Nº de boleta</th><th>Fecha de depósito</th><th class="n">A librar</th></tr></thead><tbody>${MA.rows.map(x=>`<tr><td><b>${esc(x.key)}</b></td><td class="n">${money(x.parte)}<div class="small muted">${fmtAR.format(r2(x.pct*100))}%</div></td><td class="n">${money(x.ob)}</td><td class="n">${x.ant?'− '+money(x.ant):'—'}</td><td class="n"><b>${money(x.boleta)}</b>${x.cubierto?'<div class="small" style="color:var(--ok)">cubierto por el anticipo</div>':''}</td>${MA.plan?`<td class="n">${money(x.ded)}</td><td class="n">${money(x.saldo)}</td>`:''}<td>${esc(x.bol||'—')}</td><td>${x.fDep?dmy(x.fDep):'—'}</td><td class="n"><b>${x.propio?'—':money(honShares(r).find(s=>s.key===x.key)?.monto??r2(x.parte-x.ded))}</b>${x.propio?'<div class="small" style="color:var(--bad)">aporta sin cobrar honorarios</div>':''}</td></tr>`).join('')}</tbody></table></div><p class="hint">${esc(apTextoModo(r.apAb))}${MA.rows.some(x=>x.propio)?' · '+MA.rows.filter(x=>x.propio).map(x=>esc(x.key)+' no cobra honorarios en este pago y deposita su boleta de aportes ('+money(x.boleta)+') por su cuenta').join(' · '):''}${MA.rows[0]&&MA.rows[0].minimo?' · Honorario mínimo (50% menor a '+money(S.config.umbral)+'): no lleva el 10% de aportes; el aporte es el anticipo Ius.':''}</p>`:'';
   if(MA)ap='';else if(r.honEstado==='nc'&&!(+r.mitad>0))ap=infDato('Honorarios','No corresponde');
   else if(pd!=null){const d=aportesPlanDet(r)||{},sal=saldoAportesPlan(r);ap=infDato(d.jus>0?`Aportes 10% ${money(d.t10)} + anticipo JUS ${money(d.jus)}`:'Aportes del letrado (10%)',money(d.total))+infDato('Paga en la cuota 1',money(pd))+infDato('Saldo de aportes pendiente',money(sal))+infDato('Honorario a librar en esta cuota',money(honTotal(r)))}
   else{const c=honCfg(r);ap=infDato(c.dJus?'Anticipo de JUS':'Aportes del letrado (10%)',money(c.dJus?+c.jus||0:c.d10?+r.contrad||0:0))+infDato('Honorario a librar',money(honTotal(r)))+infDato('Estado',honTag(r)||'—')}
@@ -4345,21 +4346,36 @@ function apAbObl(par){
   const hTot=hc?+hc.total||0:(+par.honConv||r2((+par.mitad||0)*2));
   let base=c.d10===false?0:r2(hTot*0.1);const jusC=+par.jus||0;
   if(!jusC){if(hc)base=r2(base+jusVigente(par.fPago));else if(c.dJus)base=r2(base+(+c.jus||0))}
-  const pct=a.reparto&&a.reparto!=='iguales'&&a.abogs.includes(a.reparto)?a.abogs.map(k=>k===a.reparto?1:0):a.abogs.map(()=>1/n);
-  const aporta=a.aporta&&a.aporta!=='cada'&&a.abogs.includes(a.aporta)?a.aporta:null;
-  const dist=amt=>a.abogs.map((k,i)=>aporta?(k===aporta?amt:0):amt*pct[i]);
+  const cob=apCobran(a);const pct=a.abogs.map(k=>cob.includes(k)?1/cob.length:0);
+  const am=apAportanModo(a);
+  const dist=amt=>a.abogs.map((k,i)=>am.keys?(am.keys.includes(k)?amt/am.keys.length:0):amt*pct[i]);
   let ob=dist(base);const cred=a.abogs.map(()=>0);
   if(jusC){const N=Math.max(1,(a.ant||[]).length);const each=jusC/N;for(let j=0;j<N;j++){const i=a.abogs.indexOf((a.ant||[])[j]);if(i>=0)cred[i]+=each;else{const d=dist(each);ob=ob.map((v,ii)=>v+d[ii])}}}
-  return a.abogs.map((k,i)=>({key:k,pct:pct[i],ob:r2(ob[i]),ant:r2(cred[i]),boleta:r2(Math.max(0,ob[i]-cred[i])),cubierto:cred[i]>0&&ob[i]-cred[i]<=0.004}))}
+  const v2=a.v===2,minimo=c.d10===false;
+  return a.abogs.map((k,i)=>{const bol=r2(Math.max(0,ob[i]-cred[i]));return {key:k,pct:pct[i],ob:r2(ob[i]),ant:r2(cred[i]),boleta:bol,cubierto:cred[i]>0&&ob[i]-cred[i]<=0.004,
+    propio:v2&&pct[i]===0&&bol>0,minimo}})}
+/* quién cobra honorarios y quién hace los aportes (los pagos viejos sólo tienen reparto/aporta y se leen igual que antes) */
+function apCobran(a){const A=a.abogs;if(a.reparto==='sel'&&Array.isArray(a.cobran)){const L=a.cobran.filter(k=>A.includes(k));if(L.length)return L}
+  if(a.reparto&&a.reparto!=='iguales'&&A.includes(a.reparto))return [a.reparto];return A.slice()}
+function apAportanModo(a){const A=a.abogs;
+  if(a.aporta==='base')return {modo:'base',keys:A.slice()};
+  if(a.aporta==='elegidos'){const L=(a.aportan||[]).filter(k=>A.includes(k));if(L.length)return {modo:'elegidos',keys:L}}
+  if(a.aporta&&a.aporta!=='cada'&&A.includes(a.aporta))return {modo:'uno',keys:[a.aporta]};
+  return {modo:'cada',keys:null}}
+function apTextoModo(a){const cob=apCobran(a),am=apAportanModo(a);
+  const h=cob.length===a.abogs.length?'Honorarios repartidos en partes iguales':cob.length===1?'Honorarios todos para '+cob[0]:'Honorarios repartidos en partes iguales entre '+cob.join(', ')+' (no cobra'+(a.abogs.length-cob.length>1?'n ':' ')+a.abogs.filter(k=>!cob.includes(k)).join(', ')+')';
+  const p=am.modo==='cada'?'aportes de cada uno según lo que cobra':am.modo==='base'?'aportes sobre la base total, en partes iguales entre todos':am.keys.length===1?'aportes todos a cargo de '+am.keys[0]:'aportes en partes iguales a cargo de '+am.keys.join(', ');
+  return h+' · '+p}
 /* lo que paga cada abogado en este pago (o cuota) y lo que le queda */
 function apAbCalc(r){
   const par=apAbPar(r);if(!par)return null;const O=apAbObl(par);const a=par.apAb;const fil=(r.apAb||a).filas||{};
   const hc=par.honCuotas&&+par.honCuotas.N>1;let rows;
   if(hc){const pagos=S.rows.filter(x=>x.cuotaPlan&&x.cuotaPlan.tipo==='hon'&&x.cuotaPlan.planId===par.id).sort((x,y)=>Math.min(...(x.cuotaPlan.ns||[x.cuotaPlan.n]))-Math.min(...(y.cuotaPlan.ns||[y.cuotaPlan.n]))||(x.fPago||'').localeCompare(y.fPago||''));
     const cad=[par,...pagos];if(!cad.some(x=>_esFila(x,r)))cad.push(r);const pend=O.map(o=>o.boleta);
+    O.forEach((o,i)=>{if(o.propio)pend[i]=0});
     for(const x of cad){const m=_esFila(x,r)?+r.mitad||0:+x.mitad||0;const parts=O.map(o=>r2(m*o.pct));const ded=parts.map((p,i)=>r2(Math.min(p,pend[i])));ded.forEach((d,i)=>pend[i]=r2(pend[i]-d));
       if(_esFila(x,r)){rows=O.map((o,i)=>({...o,parte:parts[i],ded:ded[i],saldo:pend[i]}));break}}}
-  else rows=O.map(o=>({...o,parte:r2((+r.mitad||0)*o.pct),ded:o.boleta,saldo:0}));
+  else rows=O.map(o=>({...o,parte:r2((+r.mitad||0)*o.pct),ded:o.propio?0:o.boleta,saldo:0}));
   rows.forEach(x=>{const f=fil[x.key]||{};x.bol=f.bol||'';x.fDep=f.fDep||''});
   return {par,rows,plan:hc}}
 /* ---------- enganche con los cálculos existentes ---------- */
@@ -4388,19 +4404,22 @@ function instalarAportesAbog(){
   // formulario
   const _sf=saveForm;saveForm=async function(otro){const act=apFormActivo();if(apAbF&&apAbF.abogs.some(apEsVacio)){toast('Falta elegir el abogado de cada renglón en “4 · Aportes y honorario del abogado”.',true);$('#apAbBox').scrollIntoView({block:'center'});return null}const snap=act?apClone(apAbF):null;const M=act?apAbCalc(fdTmp()):null;const r=await _sf(otro);if(!r)return r;
     if(act){r.apAb=snap;if(M){const bols=M.rows.map(x=>x.bol).filter(Boolean);r.boletas=bols.join(' / ')||r.boletas;r.aportesImp=r2(M.rows.reduce((s,x)=>s+x.ded,0));const fd=M.rows.find(x=>x.fDep);if(fd)r.fDep=fd.fDep}
-      if(r.embData&&!r.embLote)delete r.embData;logA('Aportes por abogado',`${r.orden||''} · ${snap.abogs.join(', ')} · honorarios ${snap.reparto==='iguales'?'repartidos':'a '+snap.reparto} · aportes ${snap.aporta==='cada'?'cada uno':'a cargo de '+snap.aporta}${(snap.ant||[]).length?' · anticipo Ius a '+snap.ant.map(k=>k||'ninguno').join(', '):''}`)}
+      if(r.embData&&!r.embLote)delete r.embData;logA('Aportes por abogado',`${r.orden||''} · ${snap.abogs.join(', ')} · ${apTextoModo(snap)}${(snap.ant||[]).length?' · anticipo Ius a '+snap.ant.map(k=>k||'ninguno').join(', '):''}`)}
     else if(r.apAb&&!apAbF)delete r.apAb;save();refresh();return r};
   ['f_apoderado','fc_ius','fc_iusCant','f_jus'].forEach(id=>{const e=$('#'+id);if(e){e.addEventListener('change',apAuto);e.addEventListener('input',apAuto)}});
   $('#apAbOn').onclick=()=>{apIniciar();apPintar();pagoResumen()};
   $('#apCant').addEventListener('change',()=>apSetCant(parseInt($('#apCant').value)||1));$('#apCant').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();apSetCant(parseInt($('#apCant').value)||1)}});
   $('#apAdd').onclick=()=>{const k=$('#apAddSel').value;if(!k)return;if(!apAbF)apIniciar();if(!apAbF.abogs.includes(k))apAbF.abogs.push(k);apPintar();pagoResumen()};
-  ['apReparto','apAporta'].forEach(id=>$('#'+id).onchange=e=>{apAbF[id==='apReparto'?'reparto':'aporta']=e.target.value;apPintar();pagoResumen()});
+  ['apReparto','apAporta'].forEach(id=>$('#'+id).onchange=e=>{const v=e.target.value;apAbF.v=2;
+    if(id==='apReparto'){if(v==='sel'&&!(apAbF.cobran||[]).length)apAbF.cobran=apCobran(apAbF);apAbF.reparto=v}
+    else{if(v==='elegidos'&&!(apAbF.aportan||[]).length)apAbF.aportan=apAbF.abogs.slice();apAbF.aporta=v}
+    apPintar();pagoResumen()});
 }
 let apNuevo=false;
 function apAlAbrir(r){apAbF=r&&r.apAb?apClone(r.apAb):null;apNuevo=!r;apAuto()}
 const apIusN=()=>$('#fc_ius').checked&&parseNum($('#f_jus').value)>0?Math.max(1,parseInt($('#fc_iusCant').value)||1):0;
 function apFormActivo(){if(!apAbF||!apAbF.abogs.length||$('#f_depJud').checked)return false;return apAbF.abogs.length>=2||apIusN()>0}
-function apIniciar(){const ab=abogadosDe($('#f_apoderado').value);apAbF={abogs:ab.length?ab:[],reparto:'iguales',aporta:'cada',ant:[],filas:{}};apSyncAnt()}
+function apIniciar(){const ab=abogadosDe($('#f_apoderado').value);apAbF={v:2,abogs:ab.length?ab:[],reparto:'iguales',aporta:'cada',ant:[],filas:{}};apSyncAnt()}
 function apSyncAnt(){if(!apAbF)return;const N=apIusN();const a=apAbF.ant||[];while(a.length<N)a.push(apAbF.abogs[0]||'');a.length=N;apAbF.ant=a}
 /* pagos nuevos: se activa solo cuando hay dos o más abogados o se cobró anticipo Ius; los ya guardados con el botón */
 function apAuto(){if($('#f_cuotaHon').checked||$('#f_depJud').checked){apPintar();return}
@@ -4416,29 +4435,33 @@ function apPintar(){const box=$('#apAbBox');if(!box)return;apCantVis();if(!apAbF
   ['boletas','aportesImp','fDep'].forEach(k=>{const f=$('#f_'+k)?.closest('.f');if(f)f.hidden=act});$('#apBox').hidden=act;
   if(box.hidden){$('#apBolBox').hidden=true;return}
   const A=apAbF.abogs;const opt=(v,l,s)=>`<option value="${esc(v)}" ${s?'selected':''}>${esc(l)}</option>`;
-  $('#apReparto').innerHTML=opt('iguales','Repartidos en partes iguales',apAbF.reparto==='iguales')+A.map(k=>opt(k,'Todos para '+k,apAbF.reparto===k)).join('');
-  $('#apAporta').innerHTML=opt('cada','Cada uno según lo que cobra',apAbF.aporta==='cada')+A.map(k=>opt(k,'Todos a cargo de '+k,apAbF.aporta===k)).join('');
+  const cobN=apCobran(apAbF).length;
+  $('#apReparto').innerHTML=opt('iguales','Repartidos en partes iguales',apAbF.reparto==='iguales')+(A.length>2||apAbF.reparto==='sel'?opt('sel',apAbF.reparto==='sel'?`Sólo entre los tildados (${cobN} de ${A.length})`:'Sólo entre los que tilde (“cobra”)',apAbF.reparto==='sel'):'')+A.map(k=>opt(k,'Todos para '+k,apAbF.reparto===k)).join('');
+  $('#apAporta').innerHTML=opt('cada','Cada uno según lo que cobra',apAbF.aporta==='cada')+opt('base','Todos sobre la base total (partes iguales)',apAbF.aporta==='base')+(A.length>2||apAbF.aporta==='elegidos'?opt('elegidos','A cargo de los que tilde (“aporta”)',apAbF.aporta==='elegidos'):'')+A.map(k=>opt(k,'Todos a cargo de '+k,apAbF.aporta===k)).join('');
   const N=apIusN(),each=N?r2(parseNum($('#f_jus').value)/N):0;
   $('#apAnt').innerHTML=N?(apAbF.ant||[]).map((k,j)=>`<label>Anticipo Ius ${N>1?j+1+' ':''}(${money(each)}) imputado a <select data-ant="${j}">${A.map(x=>opt(x,x,k===x)).join('')}${opt('','Ninguno (se suma a los aportes)',!k)}</select></label>`).join(''):'<span class="muted small">No se cobró anticipo Ius en este pago.</span>';
   $$('#apAnt [data-ant]').forEach(s=>s.onchange=()=>{apAbF.ant[+s.dataset.ant]=s.value;apPintar();pagoResumen()});
   const all=S.abogados.map(a=>a.key).filter(k=>!A.includes(k));$('#apAddSel').innerHTML='<option value="">— abogado —</option>'+all.map(k=>opt(k,k)).join('');
-  const hint=[];if(N&&A.length<2)hint.push('Se cobró anticipo Ius: indica que hay otro abogado. Agregalo abajo.');if(!act)hint.push('Con un solo abogado y sin anticipo, la boleta es la de siempre.');
+  const hint=[];if(N&&A.length<2)hint.push('Se cobró anticipo Ius: indica que hay otro abogado. Agregalo abajo.');if(!act)hint.push('Con un solo abogado y sin anticipo, la boleta es la de siempre.');if(M&&M.rows[0]&&M.rows[0].minimo)hint.push(`Honorario mínimo (el 50% es menor a ${money(S.config.umbral)}): no lleva el 10% de aportes; el aporte es el anticipo Ius.`);
   $('#apAbHint').innerHTML=hint.join(' ');
   const R=M?M.rows:A.map(k=>({key:k,pct:0,ob:0,ant:0,boleta:0,ded:0,saldo:0,parte:0}));const plan=M&&M.plan;
   let SH=[];try{SH=M?honSharesCalc(t):[]}catch(e){SH=[]}
   const usados=A.filter(k=>!apEsVacio(k));
   const selAb=k=>`<select data-absel>${apEsVacio(k)?opt('','— elegir abogado —',true):''}${S.abogados.filter(a=>a.activo!==false||a.key===k).map(a=>a.key).filter(x=>x===k||!usados.includes(x)).map(x=>opt(x,x,x===k)).join('')}</select>`;
   $('#apAbTabla').innerHTML=`<thead><tr><th>Abogado</th><th class="n">Honorarios</th><th class="n">Aportes a su cargo</th><th class="n">Anticipo Ius imputado</th><th class="n">Boleta de aportes${plan?' (total)':''}</th>${plan?'<th class="n">Paga en esta cuota</th><th class="n">Queda</th>':''}<th class="n">Tributos</th><th class="n">Le queda de honorarios</th><th></th></tr></thead><tbody>`+
-    R.map(x=>{const sh=SH.find(y=>y.key===x.key);const trib=sh?r2(sh.deducs.reduce((s,d)=>s+(+d.monto||0),0)):0;const lib=sh?sh.monto:r2(x.parte-x.ded-trib);return `<tr data-k="${esc(x.key)}"><td>${selAb(x.key)}</td><td class="n">${money(x.parte)}<div class="small muted">${fmtAR.format(r2(x.pct*100))}%</div></td><td class="n">${money(x.ob)}</td><td class="n">${x.ant?'− '+money(x.ant):'—'}</td><td class="n"><b>${money(x.boleta)}</b>${x.cubierto?'<div class="small" style="color:var(--ok)">cubierto por el anticipo</div>':''}</td>${plan?`<td class="n">${money(x.ded)}</td><td class="n">${money(x.saldo)}</td>`:''}
-      <td class="n">${trib?'− '+money(trib):'—'}</td><td class="n"><b style="color:${lib<0?'var(--bad)':'inherit'}">${money(lib)}</b></td><td><div class="acts">${A.length>1?`<button type="button" class="btn sm ico danger" data-apx title="Quitar">×</button>`:''}</div></td></tr>`}).join('')+
+    R.map(x=>{const sh=SH.find(y=>y.key===x.key);const trib=sh?r2(sh.deducs.reduce((s,d)=>s+(+d.monto||0),0)):0;const lib=sh?sh.monto:r2(x.parte-x.ded-trib);const cobT=apCobran(apAbF),amT=apAportanModo(apAbF);const chk=`<div class="apchk"><label title="Cobra honorarios en este pago"><input type="checkbox" data-cobra ${cobT.includes(x.key)?'checked':''}> cobra</label>${apAbF.aporta==='elegidos'?`<label title="Hace aportes"><input type="checkbox" data-aporta ${(amT.keys||[]).includes(x.key)?'checked':''}> aporta</label>`:''}</div>`;
+      return `<tr data-k="${esc(x.key)}"><td>${selAb(x.key)}${A.length>1?chk:''}</td><td class="n">${money(x.parte)}<div class="small muted">${fmtAR.format(r2(x.pct*100))}%</div></td><td class="n">${x.minimo&&!x.ob?'—<div class="small muted">honorario mínimo: aporta el anticipo Ius</div>':money(x.ob)}</td><td class="n">${x.ant?'− '+money(x.ant):'—'}</td><td class="n"><b>${money(x.boleta)}</b>${x.cubierto?'<div class="small" style="color:var(--ok)">cubierto por el anticipo</div>':''}${x.propio?'<div class="small muted">la paga él</div>':''}</td>${plan?`<td class="n">${money(x.ded)}</td><td class="n">${money(x.saldo)}</td>`:''}
+      <td class="n">${trib?'− '+money(trib):'—'}</td><td class="n"><b style="color:${lib<0||x.propio?'var(--bad)':'inherit'}">${x.propio?'− '+money(x.boleta):money(lib)}</b>${x.propio?'<div class="small" style="color:var(--bad)">aporta sin cobrar honorarios</div>':''}</td><td><div class="acts">${A.length>1?`<button type="button" class="btn sm ico danger" data-apx title="Quitar">×</button>`:''}</div></td></tr>`}).join('')+
     (R.length>1?`</tbody><tfoot><tr><td>Total ${R.length} abogados</td><td class="n">${money(r2(R.reduce((s,x)=>s+x.parte,0)))}</td><td class="n">${money(r2(R.reduce((s,x)=>s+x.ob,0)))}</td><td class="n">${money(r2(R.reduce((s,x)=>s+x.ant,0)))}</td><td class="n">${money(r2(R.reduce((s,x)=>s+x.boleta,0)))}</td>${plan?`<td class="n">${money(r2(R.reduce((s,x)=>s+x.ded,0)))}</td><td class="n">${money(r2(R.reduce((s,x)=>s+x.saldo,0)))}</td>`:''}<td></td><td class="n">${money(r2(SH.reduce((s,x)=>s+x.monto,0)))}</td><td></td></tr></tfoot>`:'</tbody>');
   $$('#apAbTabla tr[data-k]').forEach(tr=>{const k=tr.dataset.k;
     tr.querySelector('[data-absel]').onchange=e=>{if(e.target.value){apRenombrar(k,e.target.value);apSyncApod()}apPintar();pagoResumen()};
+    const cb=tr.querySelector('[data-cobra]');if(cb)cb.onchange=()=>apTildar('cobra',k,cb.checked,cb);
+    const ca=tr.querySelector('[data-aporta]');if(ca)ca.onchange=()=>apTildar('aporta',k,ca.checked,ca);
     const x=tr.querySelector('[data-apx]');if(x)x.onclick=()=>{apQuitar(k);apSyncApod();apPintar();pagoResumen()}});
   // boletas de aportes: una por abogado, dentro de "Boletas, depósito y medida cautelar"
   const bb=$('#apBolBox');bb.hidden=!act;
   if(act){$('#apBolTabla').innerHTML=`<thead><tr><th style="width:22%">Abogado</th><th class="n" style="width:20%">Boleta de aportes ${plan?'(esta cuota)':'a pagar'}</th><th style="width:32%">Nº de boleta</th><th style="width:26%">Fecha de depósito</th></tr></thead><tbody>`+
-      R.map(x=>{const f=(apAbF.filas||{})[x.key]||{};return `<tr data-k="${esc(x.key)}"><td><b>${apEsVacio(x.key)?'<span class="muted">— sin elegir —</span>':esc(x.key)}</b></td><td class="n">${money(x.ded)}</td><td><input data-bol value="${esc(f.bol||'')}" placeholder="Nº de boleta de ${apEsVacio(x.key)?'este abogado':esc(x.key)}"></td><td><input type="date" data-fd value="${esc(f.fDep||'')}"></td></tr>`}).join('')+'</tbody>';
+      R.map(x=>{const f=(apAbF.filas||{})[x.key]||{};return `<tr data-k="${esc(x.key)}"><td><b>${apEsVacio(x.key)?'<span class="muted">— sin elegir —</span>':esc(x.key)}</b></td><td class="n">${x.propio?money(x.boleta)+'<div class="small muted">la paga él (no cobra)</div>':money(x.ded)}</td><td><input data-bol value="${esc(f.bol||'')}" placeholder="Nº de boleta de ${apEsVacio(x.key)?'este abogado':esc(x.key)}"></td><td><input type="date" data-fd value="${esc(f.fDep||'')}"></td></tr>`}).join('')+'</tbody>';
     $$('#apBolTabla tr[data-k]').forEach(tr=>{const k=tr.dataset.k;const F=()=>{apAbF.filas=apAbF.filas||{};return apAbF.filas[k]=apAbF.filas[k]||{}};
       tr.querySelector('[data-bol]').oninput=e=>{F().bol=e.target.value.trim()};tr.querySelector('[data-fd]').onchange=e=>{F().fDep=e.target.value}})}
 }
@@ -4447,8 +4470,8 @@ const apEsVacio=k=>String(k||'').startsWith('#');
 function apVacioNuevo(){let i=2;while(apAbF.abogs.includes('#'+i))i++;return '#'+i}
 function apRenombrar(de,a){if(!apAbF||de===a)return;const A=apAbF.abogs;if(A.includes(a))return;A[A.indexOf(de)]=a;
   if(apAbF.filas&&apAbF.filas[de]){apAbF.filas[a]=apAbF.filas[de];delete apAbF.filas[de]}
-  if(apAbF.reparto===de)apAbF.reparto=a;if(apAbF.aporta===de)apAbF.aporta=a;apAbF.ant=(apAbF.ant||[]).map(y=>y===de?a:y)}
-function apQuitar(k){apAbF.abogs=apAbF.abogs.filter(y=>y!==k);if(apAbF.filas)delete apAbF.filas[k];if(apAbF.reparto===k)apAbF.reparto='iguales';if(apAbF.aporta===k)apAbF.aporta='cada';apAbF.ant=(apAbF.ant||[]).map(y=>y===k?(apAbF.abogs[0]||''):y)}
+  if(apAbF.reparto===de)apAbF.reparto=a;if(apAbF.aporta===de)apAbF.aporta=a;['cobran','aportan'].forEach(f=>{if(apAbF[f])apAbF[f]=apAbF[f].map(y=>y===de?a:y)});apAbF.ant=(apAbF.ant||[]).map(y=>y===de?a:y)}
+function apQuitar(k){apAbF.abogs=apAbF.abogs.filter(y=>y!==k);if(apAbF.filas)delete apAbF.filas[k];if(apAbF.reparto===k)apAbF.reparto='iguales';if(apAbF.aporta===k)apAbF.aporta='cada';['cobran','aportan'].forEach(f=>{if(apAbF[f])apAbF[f]=apAbF[f].filter(y=>y!==k)});if(apAbF.reparto==='sel'&&!(apAbF.cobran||[]).length)apAbF.reparto='iguales';if(apAbF.aporta==='elegidos'&&!(apAbF.aportan||[]).length)apAbF.aporta='cada';apAbF.ant=(apAbF.ant||[]).map(y=>y===k?(apAbF.abogs[0]||''):y)}
 /* el apoderado del pago lista a todos los abogados elegidos (así sale en la planilla) */
 function apSyncApod(){if(!apAbF)return;const A=apAbF.abogs.filter(k=>!apEsVacio(k));if(A.length<2)return;const inp=$('#f_apoderado');const ya=abogadosDe(inp.value);if(A.length===ya.length&&A.every(k=>ya.includes(k)))return;inp.value=A.join(' / ')}
 function apCantVis(){const b=$('#apCantBox');if(!b)return;const show=!$('#f_sinCaus').checked&&!$('#f_cuotaHon').checked&&!$('#f_depJud').checked;b.hidden=!show;
@@ -4460,8 +4483,16 @@ function apSetCant(n){n=Math.max(1,Math.min(12,n|0));$('#apCant').value=n;
     while(apAbF.abogs.length>n){const v=[...apAbF.abogs].reverse().find(apEsVacio);apQuitar(v||apAbF.abogs[apAbF.abogs.length-1])}}
   else if(apAbF){while(apAbF.abogs.length>1){const v=[...apAbF.abogs].reverse().find(apEsVacio);apQuitar(v||apAbF.abogs[apAbF.abogs.length-1])}if(!apIusN())apAbF=null}
   apSyncAnt&&apAbF&&apSyncAnt();apSyncApod();apPintar();if(typeof pagoResumen==='function')pagoResumen()}
+/* tildes «cobra» y «aporta» de cada abogado */
+function apTildar(cual,k,on,el){apAbF.v=2;const A=apAbF.abogs;
+  if(cual==='cobra'){let L=apCobran(apAbF).filter(y=>y!==k);if(on)L=A.filter(y=>L.includes(y)||y===k);
+    if(!L.length){el.checked=true;toast('Al menos un abogado tiene que cobrar los honorarios.',true);return}
+    if(L.length===A.length){apAbF.reparto='iguales';delete apAbF.cobran}else if(L.length===1&&A.length===2){apAbF.reparto=L[0];delete apAbF.cobran}else{apAbF.reparto='sel';apAbF.cobran=L}}
+  else{let L=(apAbF.aportan||[]).filter(y=>y!==k);if(on)L=A.filter(y=>L.includes(y)||y===k);
+    if(!L.length){el.checked=true;toast('Al menos un abogado tiene que hacer los aportes.',true);return}apAbF.aportan=L}
+  apPintar();pagoResumen()}
 /* textos para el resumen y el informe */
-function apResumenLineas(t){const M=apAbCalc(t);if(!M)return [];return M.rows.map(x=>`${esc(x.key)}: boleta de aportes <b>${money(x.ded)}</b>${x.ant?` (anticipo Ius ${money(x.ant)})`:''}${M.plan&&x.saldo>0?` · quedan ${money(x.saldo)}`:''} · se le libran <b>${money(r2(x.parte-x.ded))}</b>`)}
+function apResumenLineas(t){const M=apAbCalc(t);if(!M)return [];return M.rows.map(x=>x.propio?`${esc(x.key)}: no cobra honorarios · boleta de aportes <b>${money(x.boleta)}</b>${x.ant?` (anticipo Ius ${money(x.ant)})`:''} <b>la paga él por su cuenta</b> (no se descuenta de los honorarios de nadie)`:`${esc(x.key)}: boleta de aportes <b>${money(x.ded)}</b>${x.ant?` (anticipo Ius ${money(x.ant)})`:''}${M.plan&&x.saldo>0?` · quedan ${money(x.saldo)}`:''} · se le libran <b>${money(r2(x.parte-x.ded))}</b>`)}
 
 
 /* ---------- modo claro / oscuro (botón sol y luna del encabezado) ---------- */
@@ -4530,7 +4561,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.11.24.1';
+const APP_VERSION='2026.11.25.1';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
