@@ -1,8 +1,8 @@
 {
-    "version":  "2026.11.25.1",
+    "version":  "2026.11.25.3",
     "fecha":  "2026-11-25",
-    "novedades":  "Versión 2026.11.25.1\n- División de honorarios: cada abogado tiene el tilde «cobra». Los honorarios se reparten en partes iguales sólo entre los que cobran (por ejemplo, 4 abogados y cobran 3).\n- Aportes: nuevas opciones «Todos sobre la base total (partes iguales)», que hace aportar también al que no cobra, y «A cargo de los que tilde (aporta)». Se mantienen «Cada uno según lo que cobra» y «Todos a cargo de…».\n- Si un abogado aporta sin cobrar honorarios, su boleta figura como «la paga él» y no se descuenta de los honorarios de los demás.\n- El anticipo Ius se sigue imputando al abogado que se elija, con independencia de quién cobre o aporte.\n- Con honorario mínimo (50 % menor al umbral) se aclara que no lleva el 10 % de aportes y que el aporte es el anticipo Ius.",
+    "novedades":  "Versión 2026.11.25.3\n- Aportes con varios abogados y honorario mínimo: la obligación es el 10 % de los honorarios de los letrados y se reparte según el modo elegido. Ejemplo: honorarios $ 84.639,00 → aportes $ 8.463,90; con «Todos sobre la base total» y dos abogados, $ 4.231,95 cada uno.\n- El anticipo Ius sigue cubriendo sólo la parte del abogado al que se imputa; el sobrante no pasa a los demás.\n- «Boletas, depósito y medida cautelar» pide una boleta por cada abogado que tiene aportes, incluido el que aporta sin cobrar.\n- En las planillas de honorarios sólo figuran los abogados que cobran: el que no cobra no aparece, aunque tenga aportes.\n- Los pagos guardados antes de la versión 2026.11.25.1 y los que ya tienen los honorarios liquidados no cambian.",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "1abddddd518c985ea40f38552cad3111d8d31f9a77031c454aa6ae58644816eb",
-    "firma":  "8HlTElPENDqlpd3emWD9c+9q6Wr6EhsnonGYJnE+b6s4sMypzytwoFbtNUE6PmuDZcFm8gkWjvVqzlH+te7tBw=="
+    "sha256":  "9cb5a0f8bb4975bfe85644c8d0cdda93115cd13017b1ebbcf76ab77cc0d87001",
+    "firma":  "Y6PoDmhbcbyQ0CQ0wrtD6Fuqbm8+ab4+RxEFwWAsNLd5tcqCuIbyZSfBD/+7o1dJ1cYUsj9pgUlwtjb8AWlVjQ=="
 }
