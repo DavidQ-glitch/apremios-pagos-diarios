@@ -1,8 +1,8 @@
 {
-    "version":  "2026.11.25.6",
+    "version":  "2026.11.25.7",
     "fecha":  "2026-11-25",
-    "novedades":  "Versión 2026.11.25.6\n- Honorarios con varios abogados, según la planilla «forma de cálculo»: la obligación común de aportes es el 10 % del honorario total y se reparte entre los que aportan. Lo que cobra cada abogado = (50 % de los letrados − boletas que se pagan de todos) ÷ abogados que cobran.\n- Nueva sección «Aportes contradictorios (a cargo de la demandada)»: el 10 % contradictorio se reparte entre los abogados igual que los aportes. No se descuenta de los honorarios.\n- «Boletas, depósito y medida cautelar» muestra por abogado: a cargo del abogado (incluido el anticipo Ius imputado) + contradictorio = total de la boleta. Ejemplo: ROLDAN $ 30.000 + $ 8.463,90 = $ 38.463,90.\n- Las boletas del embargo toman esos totales por abogado. La sobretasa de justicia va en una línea aparte.\n- JUS del D-L 8904/77 para juicios iniciados antes del 21/10/2017, con revisión de los pagos ya cargados.",
+    "novedades":  "Versión 2026.11.25.7\n- Columna nueva «Cómo paga sus aportes» para cada abogado:\n  · Anticipo cobrado al contribuyente: no se descuenta de los honorarios.\n  · Paga el anticipo: se paga el valor vigente del anticipo y se descuenta del 50 % de los letrados.\n  · Paga su 10 %: se descuenta.\n  Si el 10 % de un abogado es menor que el anticipo y no tiene anticipo cobrado, el programa pide elegir antes de guardar.\n- La sobretasa de justicia se suma a la boleta de contradictorio del abogado que se elija.\n- Dos boletas por abogado (contradictorio y aportes), cada una con su número y su fecha de depósito.\n- La planilla de embargos muestra, por juicio, una fila por abogado con sus dos boletas. La tasa va en el primer abogado y «$ -» en los demás.\n- Ejemplo, orden 705-2026: ROLDAN $ 8.672,90 y $ 30.000; SALINAS $ 8.463,90 y $ 30.000; ROLDAN cobra $ 54.639.",
     "archivo":  "Apremios_Pagos_Diarios.html",
-    "sha256":  "cebf43dd81eb5c463a076fd8a29f1f1829e38fd7cf59ab45f12d22d98cd55e7a",
-    "firma":  "tQ1hpE51afkIEWQZZzkbcmCnSggnTf/bwd5Mpl/2NiEPuhW+kmUSrItHhgkXo6dHuO4p632lVpT7kQitVMyQlA=="
+    "sha256":  "ecf20a4e62b18599145ea193d25dd0b18aeb1d45c34f8f5fc6bf7a9d0026664a",
+    "firma":  "dr7B/aJLd5uuiyQadoUl9dSdeplgWCZa3vGWq6G3Aywi1pPJOmvsmrrXP6TELBGLpH0Zim/1CMh8vrQz87EuRg=="
 }
