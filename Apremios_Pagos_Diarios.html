@@ -699,6 +699,10 @@ table.grid tfoot td{background:var(--th-bg)}
       <p class="sub">Puntos de restauración guardados dentro del navegador: al iniciar sesión, cada 10 minutos de trabajo, al guardar a mano y en cada cierre de mes. Restaurar una copia requiere al Administrador.</p>
       <div class="tablewrap" style="max-height:48vh"><table class="grid" id="gSnaps"></table></div>
     </div>
+    <div class="card" style="margin-top:14px">
+      <h2><span class="num-badge">?</span>Diagnóstico de este navegador</h2>
+      <div id="gDiag"></div>
+    </div>
   </div>
   <div class="card">
     <h2><span class="num-badge">⤓</span>Exportar</h2>
@@ -2120,7 +2124,7 @@ const isAdmin=()=>cur()?.rol==='admin';
 const COLORES=['#0284c7','#7c3aed','#059669','#db2777','#ea580c','#0891b2','#4f46e5','#65a30d'];
 function syncUsers(){USERS=Object.fromEntries((AUTH.users||[]).map(u=>[u.id,u]))}
 function loadAuth(){
-  try{const t=localStorage.getItem(AUTH_KEY);if(t)AUTH=Object.assign(AUTH,JSON.parse(t))}catch(e){}
+  try{const t=localStorage.getItem(AUTH_KEY);if(t){const L=JSON.parse(t);/* nunca reemplazar lo que está en memoria por una copia más vieja */if(!AUTH.t||(+L.t||0)>=(+AUTH.t||0))AUTH=Object.assign(AUTH,L)}}catch(e){}
   if(!AUTH.users){ // migración de la versión con dos usuarios fijos
     AUTH.pw=AUTH.pw||{};if(AUTH.admin)AUTH.pw.admin=AUTH.admin;if(AUTH.luisa)AUTH.pw.luisa=AUTH.luisa;delete AUTH.admin;delete AUTH.luisa;
     const todos=Object.fromEntries(PERMS.map(p=>[p[0],true]));
@@ -2132,7 +2136,10 @@ function loadAuth(){
   if(!AUTH.migPanel){const l=AUTH.users.find(u=>u.id==='luisa');if(l){l.permisos=l.permisos||{};l.permisos.panel=true}AUTH.migPanel=1;try{localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH))}catch(e){}}
   syncUsers();
 }
-function saveAuth(){if(PAUSA)return;try{localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH))}catch(e){}idbPut('kv','auth',JSON.stringify(AUTH)).catch(()=>{});syncUsers()}
+function saveAuth(){if(PAUSA)return;AUTH.t=Date.now();const j=JSON.stringify(AUTH);
+  /* si el navegador está lleno se borra la copia vieja, para que nunca se lea una contraseña anterior; la copia interna queda como principal */
+  try{localStorage.setItem(AUTH_KEY,j)}catch(e){try{localStorage.removeItem(AUTH_KEY);localStorage.setItem(AUTH_KEY,j)}catch(e2){try{localStorage.removeItem(AUTH_KEY)}catch(e3){}}}
+  idbPut('kv','auth',j).catch(()=>{});syncUsers()}
 const checkPass=(u,p)=>!!AUTH.pw[u]&&hashPass(p,AUTH.pw[u].salt)===AUTH.pw[u].hash;
 function setPass(u,p){const salt=randSalt();AUTH.pw[u]={salt,hash:hashPass(p,salt),set:new Date().toISOString()};saveAuth()}
 const adminsActivos=()=>(AUTH.users||[]).filter(u=>u.rol==='admin'&&u.activo!==false);
@@ -2279,12 +2286,16 @@ async function load(){
   try{const m=await idbGet('kv','modo');if(m&&m.modo==='idb'){ST.modo='idb';ST.modoDesde=m.desde||''}}catch(e){}
   if(A&&A.modoIdb){ST.modo='idb';ST.modoDesde=A.desde||ST.modoDesde;A=null;
     if(!B){try{const sn=(await idbSnapsMeta()).sort((x,y)=>y.id-x.id)[0];if(sn){const v=await idbGet('snaps',sn.id);B=JSON.parse(v.data);recuperadoDe='Se recuperaron los datos desde la última copia interna ('+new Date(sn.t).toLocaleString('es-AR')+').'}}catch(e){}}}
+  DIAG.datosLS=!!A;DIAG.datosIDB=!!B;
   if(A&&B)S=(B.savedAt||'')>(A.savedAt||'')?B:A;else S=A||B;
   if(!A&&B)recuperadoDe=(recuperadoDe?recuperadoDe+' ':'')+'Se recuperaron los datos desde la copia interna.';
   if(!S)S=seed();
   normalizarS();
-  if(!localStorage.getItem(AUTH_KEY)){try{const a=await idbGet('kv','auth');if(a)localStorage.setItem(AUTH_KEY,a)}catch(e){}}
-  loadAuth();
+  /* usuarios y contraseñas: se toma la copia más nueva entre el navegador y la copia interna */
+  try{const a=await idbGet('kv','auth');const l=localStorage.getItem(AUTH_KEY);let A2=null,L2=null;try{A2=a?JSON.parse(a):null}catch(e){}try{L2=l?JSON.parse(l):null}catch(e){}
+    DIAG.authLS=!!L2;DIAG.authIDB=!!A2;
+    if(A2&&(!L2||(+A2.t||0)>(+L2.t||0)||(!L2.t&&!A2.t&&Object.keys(A2.pw||{}).length>Object.keys(L2.pw||{}).length))){AUTH=Object.assign({users:null,pw:{},idle:20},A2);try{localStorage.setItem(AUTH_KEY,a)}catch(e){}}}catch(e){}
+  loadAuth();diagApertura();
   try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
 }
 function renderSaveBar(){
@@ -2390,6 +2401,12 @@ async function renderGuardado(){
     line(ST.dir==='ok'?'ok':ST.dir==='none'?'warn':'err','3. Carpeta de respaldo (archivo en disco / red / Drive)',ST.dir==='ok'?`Vinculada: “${esc(ST.dirName)}”. Último: ${ST.dirAt?ST.dirAt.toLocaleTimeString('es-AR'):'—'}`:ST.dir==='perm'?`Vinculada a “${esc(ST.dirName)}” pero el navegador pide volver a dar permiso: tocá “Guardar”.`:'Sin vincular: protege los datos si se borra el navegador o se rompe la computadora.')+
     line(pers,'Almacenamiento protegido',pers==='ok'?'El navegador no borrará estos datos para liberar espacio.':'El navegador podría liberar espacio si el disco se llena: mantené la carpeta de respaldo vinculada.')+
     line(S.manualAt?'ok':'warn','Guardado manual del día',S.manualAt?'Último: '+new Date(S.manualAt).toLocaleString('es-AR'):'Todavía no se usó el botón Guardar.');
+  try{const D=await diagTexto();const ult=D.A.slice(-8).reverse();const borrado=D.A.filter(e=>!e.datos).length;
+    $('#gDiag').innerHTML=`<p class="hint" style="margin:0 0 6px">Qué encontró el programa en este navegador cada vez que se abrió. Si aparece «sin datos previos» o «sin contraseñas» después de haberlas creado, el navegador está borrando lo guardado al cerrarse (o se abrió con otro navegador o perfil).</p>
+      ${D.A.length===1&&!D.A[0].datos?`<div style="margin:0 0 8px;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,transparent)">En esta apertura el navegador <b>no tenía ningún dato guardado</b> del programa. Si ya lo venías usando en esta computadora, el navegador borró todo al cerrarse o se abrió con otro navegador o perfil.</div>`:''}${borrado>1?`<div style="margin:0 0 8px;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,transparent)">Este navegador arrancó <b>${borrado} veces sin los datos guardados</b>: revisá que no esté configurado para borrar cookies y datos de sitios al cerrar, y que siempre se abra con el mismo navegador.</div>`:''}
+      <div class="tablewrap"><table class="grid"><thead><tr><th>Apertura</th><th>Navegador</th><th>Datos previos</th><th>Contraseñas guardadas</th><th>Usuarios con clave</th></tr></thead><tbody>${ult.map(e=>`<tr><td class="nw">${new Date(e.t).toLocaleString('es-AR')}</td><td>${esc(e.nav)}</td><td>${e.datos?'sí':'<b style="color:var(--bad)">no</b>'}</td><td>${e.authLS||e.authIDB?'sí':'<b style="color:var(--bad)">no</b>'}</td><td>${esc((e.claves||[]).join(', ')||'—')}</td></tr>`).join('')}</tbody></table></div>
+      <div class="row" style="margin-top:8px;gap:8px"><button class="btn" type="button" id="gDiagCopiar">Copiar diagnóstico</button><span class="hint">Archivo: ${esc(decodeURIComponent(location.pathname))}</span></div>`;
+    $('#gDiagCopiar').onclick=async()=>{try{await navigator.clipboard.writeText(D.txt);toast('Diagnóstico copiado: pegalo en un mensaje.')}catch(e){download(new Blob([D.txt],{type:'text/plain'}),'diagnostico_apremios.txt')}}}catch(e){console.warn(e)}
   let snaps=[];try{snaps=(await idbSnapsMeta()).sort((a,b)=>b.id-a.id)}catch(e){}
   $('#gSnaps').innerHTML=`<thead><tr><th>Fecha</th><th>Motivo</th><th>Usuario</th><th class="n">Pagos</th><th></th></tr></thead><tbody>`+(snaps.length?snaps.map(s=>`<tr><td class="nw">${new Date(s.t).toLocaleString('es-AR')}</td><td>${esc(s.label)}</td><td>${esc(USERS[s.u]?.nombre||s.u||'')}</td><td class="n">${s.n}</td><td class="nw"><button class="btn sm" data-sd="${s.id}">Descargar</button> <button class="btn sm danger" data-sr="${s.id}">Restaurar</button></td></tr>`).join(''):'<tr><td colspan="5" class="muted">Todavía no hay copias.</td></tr>')+'</tbody>';
   $$('#gSnaps [data-sd]').forEach(b=>b.onclick=async()=>{const s=await idbGet('snaps',+b.dataset.sd);download(new Blob([s.data],{type:'application/json'}),`copia apremios ${s.t.slice(0,16).replace(/[:T]/g,'-')}.json`)});
@@ -2533,6 +2550,8 @@ function elegirUsuario(u){
   loadAuth();loginU=u;$$('.ubtn').forEach(b=>b.classList.toggle('on',b.dataset.u===u));$('#lForm').hidden=false;$('#lErr').textContent='';$('#lPass').value='';$('#lPass2').value='';
   const nuevo=!AUTH.pw[u];$('#lPass2').hidden=!nuevo;
   $('#lMsg').innerHTML=nuevo?`<b>Primer ingreso de ${esc(USERS[u].nombre)}:</b> creá tu contraseña (mínimo 6 caracteres) y repetila.`:`Ingresá la contraseña de <b>${esc(USERS[u].nombre)}</b>.`;
+  /* si el navegador arrancó sin nada guardado, avisar: suele ser un navegador que borra los datos al cerrarse o que se abrió con otro navegador/perfil */
+  if(nuevo&&!DIAG.datosLS&&!DIAG.datosIDB&&!DIAG.authLS&&!DIAG.authIDB)$('#lMsg').innerHTML+=`<div class="small" style="margin-top:8px;color:var(--warn)">Atención: al abrir el programa este navegador no tenía ningún dato guardado. Si ya habías creado tu contraseña antes, el navegador la borró al cerrarse (opción «borrar cookies y datos de sitios al cerrar») o el programa se abrió con otro navegador o perfil. Avisá al Administrador antes de seguir.</div>`;
   $('#lEntrar').textContent=nuevo?'Crear contraseña e ingresar':'Ingresar';
   setTimeout(()=>$('#lPass').focus(),30);
 }
@@ -2559,16 +2578,27 @@ let lastAct=Date.now();
 ['mousemove','keydown','mousedown','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
 setInterval(()=>{if(!PAUSA&&SES.u&&AUTH.idle>0&&$('#login').hidden&&Date.now()-lastAct>AUTH.idle*60000){guardarBorrador();save();flush();logA('Bloqueo por inactividad',USERS[SES.u].nombre);showLogin()}},20000);
 
+/* ---------- diagnóstico: qué encontró el programa en este navegador cada vez que se abrió ---------- */
+const DIAG={authLS:false,authIDB:false};const DIAG_KEY='apremios_aperturas';
+function diagApertura(){try{const ua=navigator.userAgent;const nav=/Edg\//.test(ua)?'Edge':/OPR\//.test(ua)?'Opera':/Chrome\//.test(ua)?'Chrome':/Firefox\//.test(ua)?'Firefox':'otro';
+  const e={t:new Date().toISOString(),nav:nav+' '+((ua.match(/(Edg|Chrome|Firefox)\/(\d+)/)||[])[2]||''),url:decodeURIComponent(location.pathname).slice(-120),datos:!!(DIAG.datosLS||DIAG.datosIDB),authLS:DIAG.authLS,authIDB:DIAG.authIDB,
+    claves:(AUTH.users||[]).filter(u=>AUTH.pw&&AUTH.pw[u.id]).map(u=>u.id)};
+  let L=[];try{L=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]')}catch(x){}L.push(e);L=L.slice(-30);try{localStorage.setItem(DIAG_KEY,JSON.stringify(L))}catch(x){}
+  idbGet('kv','aperturas').then(v=>{let I=[];try{I=JSON.parse(v||'[]')}catch(x){}I.push(e);idbPut('kv','aperturas',JSON.stringify(I.slice(-30)))}).catch(()=>{})}catch(x){}}
+async function diagTexto(){let I=[];try{I=JSON.parse(await idbGet('kv','aperturas')||'[]')}catch(e){}let L=[];try{L=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]')}catch(e){}
+  const A=I.length>=L.length?I:L;let pers='?';try{pers=await navigator.storage.persisted()?'sí':'no'}catch(e){}
+  return {A,pers,txt:['Diagnóstico Apremios '+APP_VERSION,'Navegador: '+navigator.userAgent,'Archivo: '+decodeURIComponent(location.href),'Almacenamiento protegido: '+pers,'Usuarios con contraseña ahora: '+((AUTH.users||[]).filter(u=>AUTH.pw[u.id]).map(u=>u.id).join(', ')||'ninguno'),'Aperturas:']
+    .concat(A.map(e=>`${new Date(e.t).toLocaleString('es-AR')} · ${e.nav} · datos previos: ${e.datos?'sí':'NO'} · contraseñas en navegador: ${e.authLS?'sí':'NO'} · en copia interna: ${e.authIDB?'sí':'NO'} · con clave: ${(e.claves||[]).join(', ')||'ninguno'} · ${e.url}`)).join('\n')}}
 /* ---------- arranque ---------- */
 /* ---------- una sola ventana activa ----------
    Si el programa se abre en otra pestaña o ventana, ésta guarda lo pendiente y queda en pausa: así una ventana
    vieja no pisa los pagos ni las contraseñas creadas en la otra (causa de "se reinicia la clave de Luisa"). */
-let PAUSA=false;const VEN_ID=Date.now()+'-'+Math.random().toString(36).slice(2);let venCanal=null;
+let PAUSA=false;const VEN_ID=Date.now()+'-'+Math.random().toString(36).slice(2);const VEN_T0=(performance.timeOrigin||Date.now());let venCanal=null;
 function venAviso(msg){try{venCanal&&venCanal.postMessage(msg)}catch(e){}try{localStorage.setItem('apremios_ventana',JSON.stringify(Object.assign({r:Math.random()},msg)))}catch(e){}}
 let venPausando=false;
 async function venPausar(){if(PAUSA||venPausando)return;venPausando=true;try{guardarBorrador()}catch(e){}try{lsWrite();await flush()}catch(e){}PAUSA=true;
   try{$$('dialog[open]').forEach(d=>d.close())}catch(e){}$('#pausaVen').hidden=false;venAviso({t:'pausada',id:VEN_ID})}
-function venRecibir(m){if(!m||m.id===VEN_ID)return;if(m.t==='hola'&&!PAUSA){venAviso({t:'estoy',id:VEN_ID});venPausar()}if(m.t==='estoy'&&venEspera)venEspera.hay();if(m.t==='pausada'&&venEspera)venEspera.listo()}
+function venRecibir(m){if(!m||m.id===VEN_ID)return;if(m.t==='hola'&&!PAUSA){/* sólo se pausa la ventana que se abrió antes; si las dos arrancan juntas, sigue la más nueva */const soyVieja=(+m.t0||0)>VEN_T0||((+m.t0||0)===VEN_T0&&String(m.id)>VEN_ID);if(!soyVieja)return;venAviso({t:'estoy',id:VEN_ID});venPausar()}if(m.t==='estoy'&&venEspera)venEspera.hay();if(m.t==='pausada'&&venEspera)venEspera.listo()}
 let venEspera=null;
 function venIniciar(){
   try{venCanal=new BroadcastChannel('apremios_moreno');venCanal.onmessage=e=>venRecibir(e.data)}catch(e){}
@@ -2577,7 +2607,7 @@ function venIniciar(){
   /* avisa a las otras ventanas; si alguna contesta, espera (como mucho 3 s) a que termine de guardar antes de leer los datos */
   return new Promise(res=>{let t;const fin=()=>{clearTimeout(t);venEspera=null;res()};
     venEspera={hay:()=>{clearTimeout(t);t=setTimeout(fin,3000)},listo:()=>{clearTimeout(t);t=setTimeout(fin,100)}};
-    t=setTimeout(fin,250);venAviso({t:'hola',id:VEN_ID})});
+    t=setTimeout(fin,250);venAviso({t:'hola',id:VEN_ID,t0:VEN_T0})});
 }
 async function boot(){
   await venIniciar();
@@ -4700,7 +4730,7 @@ function renderIvTabla(){const t=$('#ivTabla');if(!t)return;const L=S.informesVa
 /* ================== ACTUALIZACIÓN EN LÍNEA (único uso de internet) ==================
    Al iniciar, si hay conexión, consulta version.json en el repositorio público de GitHub (sin mandar ningún dato).
    Si hay una versión más nueva ofrece actualizar: respaldo completo, descarga, control sha256 y escritura del archivo. */
-const APP_VERSION='2026.11.25.7';
+const APP_VERSION='2026.11.26.1';
 const APP_ARCHIVO='Apremios_Pagos_Diarios.html';
 const UPD_BASE='https://raw.githubusercontent.com/DavidQ-glitch/apremios-pagos-diarios/main/';
 const UPD_KEY='apremios_actualizado';
